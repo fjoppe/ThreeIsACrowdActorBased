@@ -7,10 +7,20 @@ open System
 open Akka
 open Akkling
 
+type PlayerGameInfo = {
+    GameRoom : Actor.IActorRef
+}
+
+type PlayerMessage = 
+    | GameStarted of PlayerGameInfo
+    | Message of string
+    | Failed
+            
+
 [<CustomEquality; CustomComparison>]
 type PlayerIdentity = {
         Id  : Guid
-        Ref : Actor.IActorRef 
+        Ref : IActorRef<PlayerMessage>
     }
     with
         override x.Equals(yobj) =
@@ -39,15 +49,6 @@ type WaitingRoomMessage =
     | RemovePlayer of PlayerIdentity
 
 
-type PlayerGameInfo = {
-    GameRoom : Actor.IActorRef
-
-}
-
-type PlayerMessage = 
-    | GameStarted of PlayerGameInfo
-    | Failed
-            
 
 let WaitingRoomActor(mailbox:Actor<WaitingRoomMessage>) =
     let log = printfn
@@ -61,8 +62,8 @@ let WaitingRoomActor(mailbox:Actor<WaitingRoomMessage>) =
 
         if Set.count players = 3 then
             //  start the game by notifying all players the gameRoom has been initialized
-            let gameRoom = spawn ActorSystem "GameRoom" (GameRoomActor players)
-            players |> Set.toList |> List.iter(fun p -> p.Ref <! Ready(gameRoom))
+            let gameRoomActor = spawn ActorSystem "GameRoom" (GameRoomActor players)
+            players |> Set.toList |> List.iter(fun p -> p.Ref <! GameStarted({PlayerGameInfo.GameRoom = gameRoomActor}))
             log "Game Started"
 
         let! message = mailbox.Receive()
@@ -80,9 +81,9 @@ let WaitingRoomActor(mailbox:Actor<WaitingRoomMessage>) =
 let PlayerActor waitingRoom id (mailbox:Actor<PlayerMessage>) =
     let log = printfn
     let loge = printfn "%A"
-    let rec gamePlay (gameRoom:Actor.IActorRef) = actor {
+    let rec gamePlay (gameRoom:IActorRef<PlayerMessage>) = actor {
         log "Playing games!!"
-        gameRoom <! (sprintf "I am playing: %A" id)
+        gameRoom <! Message(sprintf "I am playing: %A" id)
     }
 
     let rec requestGameRoom() = actor {
@@ -91,7 +92,10 @@ let PlayerActor waitingRoom id (mailbox:Actor<PlayerMessage>) =
             waitingRoom <! AddPlayer(PlayerIdentity.Create id (mailbox.Self))
             let! response = mailbox.Receive()
             match response with
-            | Ready (a) -> return! gamePlay a
+            | GameStarted (a) -> log "Game Started"
+                                 return! requestGameRoom()
+            | Message(s)      -> log "%s" s
+                                 return! requestGameRoom()
             | Failed    -> return! requestGameRoom()
 
         with

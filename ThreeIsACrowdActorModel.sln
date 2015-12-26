@@ -1,0 +1,50 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio 14
+VisualStudioVersion = 14.0.23107.0
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{F2A71F9B-5D33-465A-A702-920D77279786}") = "WebSharper.Jatek", "WebSharper.Jatek\WebSharper.Jatek.fsproj", "{E5E64C8F-CAEC-4162-8C36-AB13BD7C03E1}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Libraries", "Libraries", "{A90AB0D4-B8BF-49A6-A68B-E9E6A1514FEC}"
+EndProject
+Project("{F2A71F9B-5D33-465A-A702-920D77279786}") = "GameEngine.FSharp", "GameEngine.FSharp\GameEngine.FSharp.fsproj", "{B9392EBC-274C-4221-9B92-115730CDBD4F}"
+EndProject
+Project("{F2A71F9B-5D33-465A-A702-920D77279786}") = "GameUI", "GameUI\GameUI.fsproj", "{6C573EE4-5985-4001-80E7-458CE450548B}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "User Interface", "User Interface", "{5E4DC785-CFB3-48C0-8C34-B2E276CFBAA2}"
+EndProject
+Project("{F2A71F9B-5D33-465A-A702-920D77279786}") = "GameEngine.Messages", "GameEngine.Messages\GameEngine.Messages.fsproj", "{A4534E5E-79D5-49F5-AD5B-5A3C1B7153B3}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{E5E64C8F-CAEC-4162-8C36-AB13BD7C03E1}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{E5E64C8F-CAEC-4162-8C36-AB13BD7C03E1}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{E5E64C8F-CAEC-4162-8C36-AB13BD7C03E1}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{E5E64C8F-CAEC-4162-8C36-AB13BD7C03E1}.Release|Any CPU.Build.0 = Release|Any CPU
+		{B9392EBC-274C-4221-9B92-115730CDBD4F}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{B9392EBC-274C-4221-9B92-115730CDBD4F}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{B9392EBC-274C-4221-9B92-115730CDBD4F}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{B9392EBC-274C-4221-9B92-115730CDBD4F}.Release|Any CPU.Build.0 = Release|Any CPU
+		{6C573EE4-5985-4001-80E7-458CE450548B}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{6C573EE4-5985-4001-80E7-458CE450548B}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{6C573EE4-5985-4001-80E7-458CE450548B}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{6C573EE4-5985-4001-80E7-458CE450548B}.Release|Any CPU.Build.0 = Release|Any CPU
+		{A4534E5E-79D5-49F5-AD5B-5A3C1B7153B3}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{A4534E5E-79D5-49F5-AD5B-5A3C1B7153B3}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{A4534E5E-79D5-49F5-AD5B-5A3C1B7153B3}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{A4534E5E-79D5-49F5-AD5B-5A3C1B7153B3}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(NestedProjects) = preSolution
+		{E5E64C8F-CAEC-4162-8C36-AB13BD7C03E1} = {A90AB0D4-B8BF-49A6-A68B-E9E6A1514FEC}
+		{B9392EBC-274C-4221-9B92-115730CDBD4F} = {A90AB0D4-B8BF-49A6-A68B-E9E6A1514FEC}
+		{6C573EE4-5985-4001-80E7-458CE450548B} = {5E4DC785-CFB3-48C0-8C34-B2E276CFBAA2}
+		{A4534E5E-79D5-49F5-AD5B-5A3C1B7153B3} = {A90AB0D4-B8BF-49A6-A68B-E9E6A1514FEC}
+	EndGlobalSection
+EndGlobal

@@ -17,7 +17,7 @@ open Akka
 open Akkling
 open GameEngine.Messages
 
-
+exception TechError of string
 
 let configuration = Configuration.parse(@"
     akka {
@@ -33,32 +33,36 @@ let configuration = Configuration.parse(@"
     }
     ")
 
-let actorSystem = System.create "ThisIsMyClient" (configuration)
 
-let registerPlayer = select actorSystem "akka.tcp://ThisIsMyServer@localhost:8080/user/RegisterPlayer"
-
-
-let registerPlayer = TypedActorSelection<RegisterPlayerMessage>(actorSystem.ActorSelection "akka.tcp://ThisIsMyServer@localhost:8080/user/RegisterPlayer")
+let actorSystem = System.create "GameStateClient" (configuration)
 
 
+// this gives a warning which you can ignore
+let registerPlayer = select<RegisterPlayerMessage> actorSystem "akka.tcp://GameStateServer@localhost:8080/user/RegisterPlayer"
 
 
+
+//  Send a "register me" message to the RegisterPlayer portal and wait until I receive an ActorRef, with which I will communicate from now.
+//  This is a simple construct, very usable for sending messages. It does not work very well for receiving. Rewrite to support push, we need an actor here.
 let player = 
     async {
-        let! player = registerPlayer <? GameEngine.Messages.RegisterMe
-        return player :> obj
+        let! untypedMessage = registerPlayer <? GameEngine.Messages.RegisterMe
+        let typedMessage = unbox<RegisterPlayerMessage>(untypedMessage)
+        match  typedMessage with
+        |   YouAreRegisterd (a) -> return ActorRefs.typed<PlayerMessage>(a) // ignore the warnings
+        |   _   -> return  raise (TechError(sprintf "Unexpected message: %A" typedMessage ))
     } |> Async.RunSynchronously
 
 
-
+//  lets get my id from the actor
 let myId = 
     async {
-        let! response = Player <? GameEngine.Messages.WhatIsMyId
-        return response :> obj
+        let! response = player <? GameEngine.Messages.WhatIsMyId
+        match response with
+        | YourId(id)    -> return id
+        | _ -> return  raise (TechError(sprintf "Unexpected message: %A" response ))
     } |> Async.RunSynchronously
-
 
 myId.ToString()
 
-unbox<PlayerMessageResponse> myId
 

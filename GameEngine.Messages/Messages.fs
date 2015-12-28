@@ -4,10 +4,7 @@ open System
 open Microsoft.FSharp.Reflection
 open System.Runtime.Serialization
 open System.Reflection
-
-type RegisterPlayerMessage =
-    | RegisterMe
-//        | UnregisterMe of Guid
+open Akka.Actor
 
 
 type PlayerMessage =
@@ -22,4 +19,9 @@ type PlayerMessageResponse =
 //    static member GetKnownTypes()=
 //        typedefof<PlayerMessageResponse>.GetNestedTypes(BindingFlags.Public ||| BindingFlags.NonPublic)
 //        |> Array.filter FSharpType.IsUnion
+
+type RegisterPlayerMessage =
+    | RegisterMe
+    | YouAreRegisterd of IActorRef
+//        | UnregisterMe of Guid
 

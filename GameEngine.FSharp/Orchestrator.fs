@@ -4,17 +4,26 @@ open System
 open NLog;
 open Akka
 open Akkling
+
 open GameEngine.Messages
 
 [<AutoOpen>]
 module GameActorSystem =
     let logger = LogManager.GetLogger("debug")
 
+
+    type GameRoomMessage = class end
+
+
     /// The personalized game info for the player
     type PlayerGameInfo = {
-        GameRoom : IActorRef<obj>
+        GameRoom : IActorRef<GameRoomMessage>
         Color    : TileType 
     }
+    with
+        static member create gr col = { GameRoom = gr; Color = col}
+
+
     /// A message to the player
     type PlayerGameMessage =
         | GameStarted of PlayerGameInfo
@@ -100,10 +109,10 @@ module GameActorSystem =
         }")
 
 
-    let ActorSystem = System.create "ThisIsMyServer" (configuration)
+    let ActorSystem = System.create "GameStateServer" (configuration)
 
     /// Game room actor, requires a GameId, three players
-    let GameRoomActor (id:Guid) (players:Set<PlayerIdentity>) (mailbox:Actor<PlayerMessage>) = 
+    let GameRoomActor (id:Guid) (players:Set<PlayerIdentity>) (mailbox:Actor<GameRoomMessage>) = 
         logger.Debug "Start GameRoomActor"
         let rec gameLoop (gameState:Game) = actor {
             let! message = mailbox.Receive()
@@ -112,6 +121,11 @@ module GameActorSystem =
                 
         let levelData = FServiceIO.LoadLevel
         let gameData = Game.StartGame levelData {GameConfiguration.GameId = id}
+
+        let myColor = TileType.red
+
+        players |> Set.toList |> List.iter(fun plAct -> plAct.Ref <! GameStarted(PlayerGameInfo.create mailbox.Self myColor))
+
         gameLoop gameData
 
 
@@ -208,26 +222,38 @@ module GameActorSystem =
             |   e -> logger.Error e
         }
 
-        let rec requestGameRoom() = actor {
-            let loop() = requestGameRoom()
+        let requestGameRoom() = 
+            logger.Debug  "Player Waiting for GameRoom"
+            waitingRoom <! AddPlayer(PlayerIdentity.Create id (mailbox.Self.Retype<PlayerGameMessage>()))
+
+        let rec waitForGameRoomResponse() = actor {
+            let loop() = waitForGameRoomResponse()
             try
-                logger.Debug  "Player Waiting for GameRoom"
-                waitingRoom <! AddPlayer(PlayerIdentity.Create id (mailbox.Self.Retype<PlayerGameMessage>()))
+                logger.Debug  "Player Waiting for GameRoom Response"
+
                 let! message = mailbox.Receive()
 
                 match message with
-                | :? PlayerMessage as  pm  -> handlePlayerMessage pm
-                                              return! loop()
+                | :? PlayerMessage as  pm  -> 
+                    logger.Debug  "Handle message from client"
+                    handlePlayerMessage pm
+                    return! loop()
                 | :? PlayerGameMessage as pgm -> 
                     match pgm with
                     | GameStarted (gr) -> return! gamePlay gr
                     | Failed           -> return! loop()
+                | :? Akkling.Actors.LifecycleEvent as lce -> 
+                    logger.Debug  "Received lifecycle event... ignore"
+                    return! loop() //  ignore..
                 | _ ->  mailbox.Sender() <! ActorEffect.Unhandled
                         return! loop()
             with
             |   e -> logger.Error e
         }
+
         requestGameRoom()
+        waitForGameRoomResponse()
+
 
     /// Creates a Player Actor
     let CreatePlayerActor waitingRoom = 
@@ -257,5 +283,7 @@ module GameActorSystem =
                 let playerActor = CreatePlayerActor waitingRoom
                 let playerActorProxy = CreatePlayerProxy playerActor
                 let sender = mailbox.Sender()
-                sender <! playerActorProxy
+                sender <! YouAreRegisterd(Akkling.ActorRefs.untyped(playerActorProxy))
+            | YouAreRegisterd(a) ->
+                mailbox.Sender() <! Unhandled
         ))

@@ -339,7 +339,7 @@ type Board =
 
         /// update player
         member private this.UpdatePlayer(playerInfo) =
-            let newPlayers = playerInfo :: this.Players |> List.filter(fun e -> e.PlayerId <> playerInfo.PlayerId)
+            let newPlayers = playerInfo :: (this.Players |> List.filter(fun e -> e.PlayerId <> playerInfo.PlayerId))
             { this with Players = newPlayers }
 
 
@@ -406,7 +406,7 @@ type Board =
 
 
         /// Set the current turn
-        member private this.SetTurn() = 
+        member this.SetTurn() = 
             let color = this.GetCurrentTurn()
             let setTurn = this.GetPlayerInfo(color, fun pi -> pi).AddMessage(PlayerStatus.itsMyTurn)
             this.UpdatePlayer(setTurn)
@@ -492,19 +492,19 @@ type Board =
 
 
         ///     Register a player
-//        member this.RegisterPlayer(playerId:Guid, fortressesPerPlayer) =
-//            let playersNew = this.Players
-//            let newPlayer = 
-//                {
-//                    PlayerId    = playerId; 
-//                    Color       = this.GetColor(playersNew);
-//                    Fortresses  = fortressesPerPlayer; 
-//                    PlayerType  = PlayerType.Human
-//                    Status      = new Queue<_>();
-//                }
-//
-//            let playersNew = List.append playersNew [newPlayer]
-//
+        member this.RegisterPlayer(playerId:Guid, fortressesPerPlayer) =
+            let playersNew = this.Players
+            let newPlayer = 
+                {
+                    PlayerId    = playerId; 
+                    Color       = this.GetColor(playersNew);
+                    Fortresses  = fortressesPerPlayer; 
+                    PlayerType  = PlayerType.Human
+                    Status      = new Queue<_>();
+                }
+
+            let playersNew = List.append playersNew [newPlayer]
+
 //            if (List.length playersNew) + numberOfAI = 3 then
 //                // the board is fully initialized
 //                let initializedBoard = { this with Players = this.FillWithAIPlayers(playersNew, fortressesPerPlayer, numberOfAI); }
@@ -513,7 +513,7 @@ type Board =
 //                let runnableBoard = initializedBoard.SetTurn()
 //                runnableBoard 
 //            else
-//                { this with Players = playersNew; }
+            { this with Players = playersNew; }
 
 
         ///<summary>

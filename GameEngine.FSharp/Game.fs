@@ -10,11 +10,11 @@ open NLog;
 [<DataContract>]
 type Game =
     {
+        [<field: DataMember(Name="Id") >]
+        Id      : Guid;
+
         [<field: DataMember(Name="Board") >]
         Board   : Board;
-
-        [<field: DataMember(Name="Configuration") >]
-        Configuration : GameConfiguration;
 
         [<field: DataMember(Name="AIProcessing") >]
         AIProcessing : bool;
@@ -38,13 +38,13 @@ type Game =
         
 
         /// Starts a new game
-        static member StartGame board configuration =
-            { Board = Board.ConvertList(board); Configuration = configuration; AIProcessing = false}
+        static member StartGame board id =
+            { Board = Board.ConvertList(board); Id = id; AIProcessing = false}
 
 
         /// Let a player join a game
-//        member this.JoinGame(playerId : Guid) =
-//            { this with Board = this.Board.RegisterPlayer(playerId, this.Board.FortressesPerPlayer)}
+        member this.JoinGame (playerId : Guid) =
+            { this with Board = this.Board.RegisterPlayer(playerId, this.Board.FortressesPerPlayer)}
 
 
         /// Retrieve color of the player for the current turn
@@ -114,6 +114,9 @@ type Game =
         /// Get player info by tile color
         member this.GetPlayerInfo(tileColor : TileType) =
             this.Board.GetPlayerInformation(tileColor)
+
+        member this.SetTurn()=
+            { this with Board = this.Board.SetTurn()}
 
         member this.CurrentTurnIsAI() =
             if this.Board.GameOver then

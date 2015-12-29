@@ -11,28 +11,34 @@ open GameEngine.Messages
 module GameActorSystem =
     let logger = LogManager.GetLogger("debug")
 
+    [<Literal>]
+    let waitForAIToRegister = 5
+
+    //  ========================== MESSAGE TYPES ==========================
 
     type GameRoomMessage = class end
 
 
-    /// The personalized game info for the player
+    /// The personalized game-info for the player
     type PlayerGameInfo = {
         GameRoom : IActorRef<GameRoomMessage>
         Color    : TileType 
     }
     with
-        static member create gr col = { GameRoom = gr; Color = col}
+        static member Create gr col = { GameRoom = gr; Color = col}
 
 
-    /// A message to the player
+    /// A message to the player about the Game
     type PlayerGameMessage =
         | GameStarted of PlayerGameInfo
         | Failed
 
+
+    /// Contains extended/convenient player identity info
     [<CustomEquality; CustomComparison>]
     type PlayerIdentity = {
-            Id  : Guid
-            Ref : IActorRef<PlayerGameMessage>
+            Id  : Guid                          // how he/she should be remembered
+            Ref : IActorRef<PlayerGameMessage>  // how one should talk to him/her
         }
         with
             override x.Equals(yobj) =
@@ -48,6 +54,16 @@ module GameActorSystem =
                     | _ -> invalidArg "yobj" "cannot compare values of different types"
             static member Create i r = {Id = i; Ref = r}
 
+
+    /// A message from the (ai) player to a Waitingroom
+    type WaitingRoomMessage =
+        | AddPlayer    of PlayerIdentity
+        | RemovePlayer of PlayerIdentity
+        | AddAIPlayer  of Guid * PlayerIdentity
+
+
+    //  ========================== UTIL FUNCTIONS ==========================
+
     
     [<Literal>]
     let Player = "Player"
@@ -58,19 +74,8 @@ module GameActorSystem =
     [<Literal>]
     let GameRoom = "GameRoom"
 
-    /// Create a readible Id
-    let CreateId s g = sprintf "%s_%A" s g
-    let CreateAIId s g = sprintf "%s_%A" s g
-
-    //  ========================== MESSAGE TYPES ==========================
-
-    /// A message from the player to a Waitingroom
-    type WaitingRoomMessage =
-        | AddPlayer    of PlayerIdentity
-        | RemovePlayer of PlayerIdentity
-        | AddAIPlayer  of Guid * PlayerIdentity
-
-
+    /// Create a readable Actor name
+    let CreateName s g = sprintf "%s_%A" s g
 
 
     //  ========================== ACTOR STATE ==========================
@@ -114,24 +119,38 @@ module GameActorSystem =
     /// Game room actor, requires a GameId, three players
     let GameRoomActor (id:Guid) (players:Set<PlayerIdentity>) (mailbox:Actor<GameRoomMessage>) = 
         logger.Debug "Start GameRoomActor"
+
+        let playerList = players |> Set.toList
+
         let rec gameLoop (gameState:Game) = actor {
             let! message = mailbox.Receive()
             return! gameLoop gameState
         }
-                
+
+        // === Init game room ===              
         let levelData = FServiceIO.LoadLevel
-        let gameData = Game.StartGame levelData {GameConfiguration.GameId = id}
+        logger.Debug "loaded level data"
 
-        let myColor = TileType.red
+        let gameData = Game.StartGame levelData id
+        logger.Debug "started game"
 
-        players |> Set.toList |> List.iter(fun plAct -> plAct.Ref <! GameStarted(PlayerGameInfo.create mailbox.Self myColor))
+        let gameData = playerList  |> List.fold (fun (gd:Game) player -> gd.JoinGame (player.Id)) gameData
+        logger.Debug "added all players to the game"
 
+        let gameData = gameData.SetTurn()
+
+        playerList |> List.iter(fun plAct -> 
+            let myColor = gameData.GetPlayerColor(plAct.Id)
+            plAct.Ref <! GameStarted(PlayerGameInfo.Create mailbox.Self myColor
+            ))
+
+        // === Start game room ===
         gameLoop gameData
 
 
     /// Creates a game room actor
     let CreateGameRoomActor gameId players =
-        spawn ActorSystem (CreateId GameRoom gameId) (GameRoomActor gameId players)
+        spawn ActorSystem (CreateName GameRoom gameId) (GameRoomActor gameId players)
 
 
     /// Sends a message to the waiting room after a waiting period, and awaits the waiting room's response.
@@ -139,7 +158,7 @@ module GameActorSystem =
     let AIPlayerActor waitingRoom id gameId (mailbox:Actor<PlayerGameMessage>) =
         logger.Debug "Start AIPlayerActor"
         ActorSystem.Scheduler.ScheduleTellOnce(
-            TimeSpan.FromSeconds(20.0), 
+            TimeSpan.FromSeconds(float(waitForAIToRegister)), 
             waitingRoom, 
             AddAIPlayer(gameId, PlayerIdentity.Create id mailbox.Self)
         )
@@ -155,7 +174,7 @@ module GameActorSystem =
     /// Create an AI player
     let CreateAIPlayerActor waitingRoom gameId = 
         let id = Guid.NewGuid()
-        spawn ActorSystem (CreateAIId "AIPlayer" id) (AIPlayerActor waitingRoom id gameId)
+        spawn ActorSystem (CreateName "AIPlayer" id) (AIPlayerActor waitingRoom id gameId)
             
 
     /// Waiting room actor, which receives incoming player request for a game. Starts a game after three players entered the waiting room.
@@ -204,7 +223,7 @@ module GameActorSystem =
             | WhatIsMyId  -> mailbox.Sender() <! YourId(id.ToString())
             | Choice      -> mailbox.Sender() <! Nothing
 
-
+        /// the player behavior during the game
         let rec gamePlay (gameRoom:PlayerGameInfo) = actor {
             let loop() = gamePlay gameRoom
             try
@@ -222,10 +241,14 @@ module GameActorSystem =
             |   e -> logger.Error e
         }
 
+
+        /// the player at initialization
         let requestGameRoom() = 
             logger.Debug  "Player Waiting for GameRoom"
             waitingRoom <! AddPlayer(PlayerIdentity.Create id (mailbox.Self.Retype<PlayerGameMessage>()))
 
+
+        /// the player behavior while waiting in the waiting room for a game
         let rec waitForGameRoomResponse() = actor {
             let loop() = waitForGameRoomResponse()
             try
@@ -240,10 +263,12 @@ module GameActorSystem =
                     return! loop()
                 | :? PlayerGameMessage as pgm -> 
                     match pgm with
-                    | GameStarted (gr) -> return! gamePlay gr
+                    | GameStarted (gr) -> 
+                        logger.Debug (sprintf "Received Game Started message, gameroom and player info: %A" gr)
+                        return! gamePlay gr
                     | Failed           -> return! loop()
                 | :? Akkling.Actors.LifecycleEvent as lce -> 
-                    logger.Debug  "Received lifecycle event... ignore"
+                    logger.Debug  "Received actor-lifecycle event... ignore"
                     return! loop() //  ignore..
                 | _ ->  mailbox.Sender() <! ActorEffect.Unhandled
                         return! loop()
@@ -258,13 +283,15 @@ module GameActorSystem =
     /// Creates a Player Actor
     let CreatePlayerActor waitingRoom = 
         let id = Guid.NewGuid()
-        spawn ActorSystem (CreateId Player id) (PlayerActor waitingRoom id)
+        spawn ActorSystem (CreateName Player id) (PlayerActor waitingRoom id)
 
-    /// Player proxy only excepts public known messages to and from player actor.
-    /// The proxy always gives a response.
+
+    /// Create a PlayerProxy Actor
+    /// A playerproxy only excepts public/remotely known messages to/from the player.
+    /// If you send a message to this proxy, you should always get a response.
     let CreatePlayerProxy (playerActor:IActorRef<obj>) =
         let id = Guid.NewGuid()
-        spawn ActorSystem (CreateId ProxyPlayer id) (actorOf2 
+        spawn ActorSystem (CreateName ProxyPlayer id) (actorOf2 
             (fun (mailbox:Actor<PlayerMessage>) message -> 
                 let response = 
                     async {
@@ -275,8 +302,12 @@ module GameActorSystem =
             ))
 
 
+    /// Creates the waiting room actor
     let WaitingRoom() = spawn ActorSystem "WaitingRoom" WaitingRoomActor
 
+    /// Creates the register player actor. This is the entry-point.
+    /// This actor puts the player in a waiting room, to await the game.
+    /// To the caller a PlayerProxy ActorRef is returned via which he can communicate with the game.
     let RegisterPlayer waitingRoom = spawn ActorSystem "RegisterPlayer" (actorOf2 (fun mailbox message ->
             match message with
             | RegisterMe    ->

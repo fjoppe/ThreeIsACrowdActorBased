@@ -46,23 +46,22 @@ type FService() =
         ai.aiStart()
 
 
-    interface IFSharpService with
 
-        member this.GetUniqueIdentifier() = 
-            FService.logger.Debug("GetUniqueIdentifier")
-            Guid.NewGuid()
+    member this.GetUniqueIdentifier() = 
+        FService.logger.Debug("GetUniqueIdentifier")
+        Guid.NewGuid()
 
 
-        member this.StartNewGame configuration =
-            try
-                FService.logger.Debug("StartNewGame")
-                use lock = FServiceIO.lockGame(configuration.GameId)
-                let levelData = FServiceIO.LoadLevel
-                let gameData = Game.StartGame levelData configuration //  start the game by init game data
-                FServiceIO.CreateGameData(configuration.GameId, gameData)
-            with
-                | e -> FService.logger.Error(e)
-                       reraise()
+//        member this.StartNewGame configuration =
+//            try
+//                FService.logger.Debug("StartNewGame")
+//                use lock = FServiceIO.lockGame(configuration.GameId)
+//                let levelData = FServiceIO.LoadLevel
+//                let gameData = Game.StartGame levelData configuration //  start the game by init game data
+//                FServiceIO.CreateGameData(configuration.GameId, gameData)
+//            with
+//                | e -> FService.logger.Error(e)
+//                       reraise()
 
 
 //        member this.JoinGame gameId playerId =
@@ -72,76 +71,76 @@ type FService() =
 //            FService.Execute(gameId, execute)
 
 
-        member this.GetCurrentTurn gameId = 
-            FService.logger.Debug("GetCurrentTurn")
-            let execute(gameData:Game) =
-                gameData.GetCurrentTurn() 
-            FService.Execute(gameId, execute)
+    member this.GetCurrentTurn gameId = 
+        FService.logger.Debug("GetCurrentTurn")
+        let execute(gameData:Game) =
+            gameData.GetCurrentTurn() 
+        FService.Execute(gameId, execute)
 
 
-        member this.GetPossibleMoves gameId playerId =
-            FService.logger.Debug("GetPossibleMoves")
-            let execute(gameData:Game) =
-                gameData.GetPossibleMoves(playerId)
-            FService.Execute(gameId, execute)
+    member this.GetPossibleMoves gameId playerId =
+        FService.logger.Debug("GetPossibleMoves")
+        let execute(gameData:Game) =
+            gameData.GetPossibleMoves(playerId)
+        FService.Execute(gameId, execute)
 
 
-        member this.ChooseTurn gameId playerId id =
-            FService.logger.Debug("ChooseTurn")
-            let execute(gameData:Game) =
-                let gameData = gameData.ChooseTurn(playerId, id)
-                FService.logger.Debug(String.Format("Next turn: {0}", gameData.GetCurrentTurn()))
-                gameData
-            FService.Execute(gameId, execute)
+    member this.ChooseTurn gameId playerId id =
+        FService.logger.Debug("ChooseTurn")
+        let execute(gameData:Game) =
+            let gameData = gameData.ChooseTurn(playerId, id)
+            FService.logger.Debug(String.Format("Next turn: {0}", gameData.GetCurrentTurn()))
+            gameData
+        FService.Execute(gameId, execute)
 
 
-        member this.ChooseFortressedTurn gameId playerId id =
-            FService.logger.Debug("ChooseFortressedTurn ")
-            let execute(gameData:Game) =
-                gameData.ChooseFortressedTurn(playerId, id)
-            FService.Execute(gameId, execute)
+    member this.ChooseFortressedTurn gameId playerId id =
+        FService.logger.Debug("ChooseFortressedTurn ")
+        let execute(gameData:Game) =
+            gameData.ChooseFortressedTurn(playerId, id)
+        FService.Execute(gameId, execute)
 
 
-        member this.RetrieveBoardData gameId =
-            FService.logger.Debug("RetrieveBoardData")
-            let execute(gameData:Game) =
-                gameData.RetrieveBoardData()
-            FService.Execute(gameId, execute)
+    member this.RetrieveBoardData gameId =
+        FService.logger.Debug("RetrieveBoardData")
+        let execute(gameData:Game) =
+            gameData.RetrieveBoardData()
+        FService.Execute(gameId, execute)
 
 
-        member this.GetBoardState gameId =
+    member this.GetBoardState gameId =
 //            FService.logger.Debug("GetBoardState")
-            let execute(gameData:Game) =
-                gameData.GetBoardState()
-            FService.Execute(gameId, execute)
+        let execute(gameData:Game) =
+            gameData.GetBoardState()
+        FService.Execute(gameId, execute)
 
 
-        member this.GetGameStats gameId =
+    member this.GetGameStats gameId =
 //            FService.logger.Debug("GetGameStats")
-            let execute(gameData:Game) =
-                gameData.GetGameStats()
-            FService.Execute(gameId, execute)
+        let execute(gameData:Game) =
+            gameData.GetGameStats()
+        FService.Execute(gameId, execute)
 
 
-        member this.WhatIsMyColor gameId playerId =
-            FService.logger.Debug("WhatIsMyColor")
-            let execute(gameData:Game) =
-                let result = gameData.WhatIsMyColor(playerId)
-                result
-            FService.Execute(gameId, execute)
+    member this.WhatIsMyColor gameId playerId =
+        FService.logger.Debug("WhatIsMyColor")
+        let execute(gameData:Game) =
+            let result = gameData.WhatIsMyColor(playerId)
+            result
+        FService.Execute(gameId, execute)
             
 
-        member this.WhatIsMyStatus gameId playerId =
+    member this.WhatIsMyStatus gameId playerId =
 //            FService.logger.Debug("WhatIsMyStatus")
-            let execute(gameData:Game) =
-                let (status, gameData) = gameData.WhatIsMyStatus(playerId)
-                if status = PlayerStatus.none && gameData.CurrentTurnIsAI() && not gameData.AIProcessing then
-                    FService.logger.Debug("Current Turn is AI for processing")
-                    this.StartAI(gameId)
-                    let gameDataProcessingAI = { gameData with AIProcessing = true }
-                    FServiceIO.SaveGameData(gameId, gameDataProcessingAI )
-                else
-                    FServiceIO.SaveGameData(gameId, gameData)
-                status
-            FService.Execute(gameId, execute)
+        let execute(gameData:Game) =
+            let (status, gameData) = gameData.WhatIsMyStatus(playerId)
+            if status = PlayerStatus.none && gameData.CurrentTurnIsAI() && not gameData.AIProcessing then
+                FService.logger.Debug("Current Turn is AI for processing")
+                this.StartAI(gameId)
+                let gameDataProcessingAI = { gameData with AIProcessing = true }
+                FServiceIO.SaveGameData(gameId, gameDataProcessingAI )
+            else
+                FServiceIO.SaveGameData(gameId, gameData)
+            status
+        FService.Execute(gameId, execute)
 

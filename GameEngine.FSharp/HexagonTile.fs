@@ -3,7 +3,7 @@
 open System
 open System.Runtime.Serialization
 open System.Collections.Generic
-
+open GameEngine.Common
 
 ///<summary>
 /// Neighbour type, either None or Tile id

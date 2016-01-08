@@ -5,7 +5,7 @@ open System
 open System.Runtime.Serialization
 open System.Collections.Generic
 open NLog;
-
+open GameEngine.Common
 
 [<DataContract>]
 type Game =

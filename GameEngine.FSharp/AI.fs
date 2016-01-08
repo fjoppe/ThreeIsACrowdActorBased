@@ -2,6 +2,7 @@
 
 open System
 open NLog
+open GameEngine.Common
 
 type AIEvaluation = {
     Choice : int;

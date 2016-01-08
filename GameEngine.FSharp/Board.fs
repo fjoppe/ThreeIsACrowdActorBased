@@ -5,6 +5,7 @@ open System
 open System.Runtime.Serialization
 open System.Collections.Generic
 open NLog;
+open GameEngine.Common
 
 module Map =
     let Values m = m |> Map.toSeq |> Seq.map(fun (a,b) -> b)

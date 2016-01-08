@@ -2,7 +2,7 @@
 
 open System
 open System.Runtime.Serialization
-
+open GameEngine.Common
 
 [<DataContract>]
 type TileColor = {

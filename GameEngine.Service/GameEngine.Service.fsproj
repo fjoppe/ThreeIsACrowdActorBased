@@ -5,14 +5,14 @@
     <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
     <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
     <SchemaVersion>2.0</SchemaVersion>
-    <ProjectGuid>a4534e5e-79d5-49f5-ad5b-5a3c1b7153b3</ProjectGuid>
-    <OutputType>Library</OutputType>
-    <RootNamespace>GameEngine.Messages</RootNamespace>
-    <AssemblyName>GameEngine.Messages</AssemblyName>
+    <ProjectGuid>a8dd7afb-8371-4fe0-a9ec-363034693f72</ProjectGuid>
+    <OutputType>Exe</OutputType>
+    <RootNamespace>GameEngine.Service</RootNamespace>
+    <AssemblyName>GameEngine.Service</AssemblyName>
     <TargetFrameworkVersion>v4.5.2</TargetFrameworkVersion>
-    <TargetFSharpCoreVersion>4.4.0.0</TargetFSharpCoreVersion>
     <AutoGenerateBindingRedirects>true</AutoGenerateBindingRedirects>
-    <Name>GameEngine.Messages</Name>
+    <TargetFSharpCoreVersion>4.4.0.0</TargetFSharpCoreVersion>
+    <Name>GameEngine.Service</Name>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
     <DebugSymbols>true</DebugSymbols>
@@ -22,7 +22,9 @@
     <OutputPath>bin\Debug\</OutputPath>
     <DefineConstants>DEBUG;TRACE</DefineConstants>
     <WarningLevel>3</WarningLevel>
-    <DocumentationFile>bin\Debug\GameEngine.Messages.XML</DocumentationFile>
+    <PlatformTarget>AnyCPU</PlatformTarget>
+    <DocumentationFile>bin\Debug\GameEngine.Service.XML</DocumentationFile>
+    <Prefer32Bit>true</Prefer32Bit>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
     <DebugType>pdbonly</DebugType>
@@ -31,7 +33,9 @@
     <OutputPath>bin\Release\</OutputPath>
     <DefineConstants>TRACE</DefineConstants>
     <WarningLevel>3</WarningLevel>
-    <DocumentationFile>bin\Release\GameEngine.Messages.XML</DocumentationFile>
+    <PlatformTarget>AnyCPU</PlatformTarget>
+    <DocumentationFile>bin\Release\GameEngine.Service.XML</DocumentationFile>
+    <Prefer32Bit>true</Prefer32Bit>
   </PropertyGroup>
   <PropertyGroup>
     <MinimumVisualStudioVersion Condition="'$(MinimumVisualStudioVersion)' == ''">11</MinimumVisualStudioVersion>
@@ -51,12 +55,34 @@
   <Import Project="$(FSharpTargetsPath)" />
   <ItemGroup>
     <Compile Include="AssemblyInfo.fs" />
-    <Compile Include="Messages.fs" />
+    <Compile Include="Common.fs" />
+    <Compile Include="ActorSystem.fsi" />
+    <Compile Include="ActorSystem.fs" />
+    <Compile Include="InternalMessages.fs" />
+    <Compile Include="Player.fsi" />
+    <Compile Include="Player.fs" />
+    <Compile Include="GameRoom.fs" />
+    <Compile Include="WaitingRoom.fsi" />
+    <Compile Include="WaitingRoom.fs" />
+    <Compile Include="EntryPoint.fsi" />
+    <Compile Include="EntryPoint.fs" />
+    <Compile Include="GameService.fs" />
+    <None Include="CallRemoteActor.fsx" />
+    <None Include="FailFast.fsx" />
+    <None Include="App.config" />
     <Content Include="packages.config" />
   </ItemGroup>
   <ItemGroup>
     <Reference Include="Akka">
       <HintPath>..\packages\Akka.1.0.5\lib\net45\Akka.dll</HintPath>
+      <Private>True</Private>
+    </Reference>
+    <Reference Include="Akka.Logger.NLog">
+      <HintPath>..\packages\Akka.Logger.NLog.1.0.5\lib\net45\Akka.Logger.NLog.dll</HintPath>
+      <Private>True</Private>
+    </Reference>
+    <Reference Include="Akka.Remote">
+      <HintPath>..\packages\Akka.Remote.1.0.5\lib\net45\Akka.Remote.dll</HintPath>
       <Private>True</Private>
     </Reference>
     <Reference Include="Akkling">
@@ -72,7 +98,19 @@
       <Private>True</Private>
     </Reference>
     <Reference Include="FsPickler">
-      <HintPath>..\packages\FsPickler.0.6\lib\net45\FsPickler.dll</HintPath>
+      <HintPath>..\packages\FsPickler.1.7.1\lib\net45\FsPickler.dll</HintPath>
+      <Private>True</Private>
+    </Reference>
+    <Reference Include="Google.ProtocolBuffers">
+      <HintPath>..\packages\Google.ProtocolBuffers.2.4.1.521\lib\net40\Google.ProtocolBuffers.dll</HintPath>
+      <Private>True</Private>
+    </Reference>
+    <Reference Include="Google.ProtocolBuffers.Serialization">
+      <HintPath>..\packages\Google.ProtocolBuffers.2.4.1.521\lib\net40\Google.ProtocolBuffers.Serialization.dll</HintPath>
+      <Private>True</Private>
+    </Reference>
+    <Reference Include="Helios">
+      <HintPath>..\packages\Helios.1.4.1\lib\net45\Helios.dll</HintPath>
       <Private>True</Private>
     </Reference>
     <Reference Include="mscorlib" />
@@ -83,10 +121,33 @@
       <HintPath>..\packages\Newtonsoft.Json.7.0.1\lib\net45\Newtonsoft.Json.dll</HintPath>
       <Private>True</Private>
     </Reference>
+    <Reference Include="NLog">
+      <HintPath>..\packages\NLog.4.2.3\lib\net45\NLog.dll</HintPath>
+      <Private>True</Private>
+    </Reference>
     <Reference Include="System" />
     <Reference Include="System.Core" />
     <Reference Include="System.Numerics" />
+    <ProjectReference Include="..\GameEngine.Common\GameEngine.Common.fsproj">
+      <Name>GameEngine.Common</Name>
+      <Project>{a4534e5e-79d5-49f5-ad5b-5a3c1b7153b3}</Project>
+      <Private>True</Private>
+    </ProjectReference>
+    <ProjectReference Include="..\GameEngine.FSharp\GameEngine.FSharp.fsproj">
+      <Name>GameEngine.FSharp</Name>
+      <Project>{b9392ebc-274c-4221-9b92-115730cdbd4f}</Project>
+      <Private>True</Private>
+    </ProjectReference>
     <Reference Include="System.Runtime.Serialization" />
+    <Reference Include="System.Xml" />
+    <Reference Include="Topshelf">
+      <HintPath>..\packages\Topshelf.3.2.0\lib\net40-full\Topshelf.dll</HintPath>
+      <Private>True</Private>
+    </Reference>
+    <Reference Include="Topshelf.FSharp">
+      <HintPath>..\packages\Topshelf.FSharp.2.1.0\lib\net40\Topshelf.FSharp.dll</HintPath>
+      <Private>True</Private>
+    </Reference>
     <Reference Include="Wire">
       <HintPath>..\packages\Wire.0.0.6\lib\Wire.dll</HintPath>
       <Private>True</Private>

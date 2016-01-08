@@ -2,6 +2,8 @@
 
 open System
 open System.Runtime.Serialization
+open GameEngine.Common
+
 
 ///<summary>The Hexagon representation used for file-storage
 ///</summary>

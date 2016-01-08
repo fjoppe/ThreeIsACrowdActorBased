@@ -8,18 +8,21 @@ open System
 open Topshelf
 open Time
 open NLog;
-open GameEngine.FSharp
+open GameEngine.Service
+
 
 module GameService =
     let log = LogManager.GetLogger("debug")
 
-    let WaitingRoom = lazy (GameActorSystem.WaitingRoom())
-    let RegisterPlayer = lazy (GameActorSystem.RegisterPlayer WaitingRoom.Value)
+    try
+        let sys = GameActorSystem.ActorSystem
+        sys |> ignore
+    with
+    |   e -> log.Error e
+
+    let regPlayer = EntryPoint.RegisterPlayer()
 
     let start ctx =
-        log.Debug "Starting GameService"
-        WaitingRoom.Force() |> ignore
-        RegisterPlayer.Force() |> ignore
         log.Debug "GameService started"
         true
 

@@ -1,4 +1,4 @@
-﻿namespace GameEngine.FSharp
+﻿namespace GameEngine.Common
 
 type TileType = 
     | none = 0

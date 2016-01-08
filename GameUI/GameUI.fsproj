@@ -239,11 +239,6 @@
       <HintPath>..\packages\WebSharper.3.5.3.203\lib\net40\WebSharper.Web.dll</HintPath>
       <Private>True</Private>
     </Reference>
-    <ProjectReference Include="..\GameEngine.Messages\GameEngine.Messages.fsproj">
-      <Name>GameEngine.Messages</Name>
-      <Project>{a4534e5e-79d5-49f5-ad5b-5a3c1b7153b3}</Project>
-      <Private>True</Private>
-    </ProjectReference>
     <ProjectReference Include="..\WebSharper.Jatek\WebSharper.Jatek.fsproj">
       <Name>WebSharper.Jatek</Name>
       <Project>{e5e64c8f-caec-4162-8c36-ab13bd7c03e1}</Project>

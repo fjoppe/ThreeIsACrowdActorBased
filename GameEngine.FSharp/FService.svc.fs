@@ -134,7 +134,7 @@ type FService() =
 //            FService.logger.Debug("WhatIsMyStatus")
         let execute(gameData:Game) =
             let (status, gameData) = gameData.WhatIsMyStatus(playerId)
-            if status = PlayerStatus.none && gameData.CurrentTurnIsAI() && not gameData.AIProcessing then
+            if status = PlayerStatus.NoStatus && gameData.CurrentTurnIsAI() && not gameData.AIProcessing then
                 FService.logger.Debug("Current Turn is AI for processing")
                 this.StartAI(gameId)
                 let gameDataProcessingAI = { gameData with AIProcessing = true }

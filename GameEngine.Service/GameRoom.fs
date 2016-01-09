@@ -64,23 +64,42 @@ module GameRoom =
             return! gameLoop gameState
         }
 
-        // === Init game room ===              
+        //  initialize game-room player actors
+        playerList |> List.iter(fun plAct -> let selfSupporting = CreatePlayerActor plAct.Id plAct.Ref mailbox.Self in ())
+        logger "initialized player actors"
+
+        // Init game room
         let levelData = FServiceIO.LoadLevel
         logger "loaded level data"
 
         let gameData = Game.StartGame levelData id
         logger "started game"
 
-        let gameData = playerList  |> List.fold (fun (gd:Game) player -> gd.JoinGame (player.Id)) gameData
+        // these are players who enter the game, we add the handler when the game wants to send a message to the player
+        let gamePlayerList = 
+            playerList 
+            |> List.map (fun playerIdentity ->
+                            let sendMessageToPlayer (message:PlayerStatus) =
+                                let messageToSend = 
+                                    match message with
+                                    | PlayerStatus.ItsMyTurn      -> PlayerMessageResponse.ItIsYourTurn
+                                    | PlayerStatus.NoMoves        -> PlayerMessageResponse.NoMoves
+                                    | PlayerStatus.GameOver       -> PlayerMessageResponse.GameOver
+                                    | PlayerStatus.GameStarted(x) -> PlayerMessageResponse.GameStarted(x)
+                                    | _         -> failwith "Unrecognized message"
+
+                                playerIdentity.Ref <! ToPlayer(messageToSend)
+                            let player = GameEngine.FSharp.Player.Create playerIdentity.Id sendMessageToPlayer
+                            player)
+
+        let gameData = gamePlayerList |> List.fold (fun (gd:Game) player -> gd.JoinGame player) gameData
         logger "added all players to the game"
 
+        let gameData = gameData.InformGameStartedToPlayers()
+        logger "send game started to all players"
+
         let gameData = gameData.SetTurn()
-
-        playerList |> List.iter(fun plAct -> 
-            let selfSupporting = CreatePlayerActor  plAct.Id plAct.Ref mailbox.Self
-            let myColor = gameData.GetPlayerColor(plAct.Id)
-            plAct.Ref <! ToPlayer(GameStarted(myColor)))
-
+        logger "set the first turn"
 
         // === Start game room ===
         gameLoop gameData

@@ -66,32 +66,32 @@ type AI = {
             let playerInfo = gameData.GetPlayerInfo(playerColor)
 
             if playerInfo.IsSome then
-                let playerId = playerInfo.Value.PlayerId
-                let possibleChoices = gameData.GetPossibleMoves(playerId)
+                let player = playerInfo.Value.Player
+                let possibleChoices = gameData.GetPossibleMoves(player)
 
                 AI.logger.Debug("possible choices: {0}", possibleChoices.Count)
 
-                let valuedChoices = possibleChoices |> Seq.map(fun choice -> this.EvaluateStrategies gameData playerId choice)
+                let valuedChoices = possibleChoices |> Seq.map(fun choice -> this.EvaluateStrategies gameData player choice)
                 let maxValue = valuedChoices |> Seq.map(fun choice -> choice.Value) |> Seq.max
                 let maxValuedChoices = Array.ofSeq(valuedChoices |> Seq.filter(fun elm -> elm.Value = maxValue))
 
                 let choiceIndex = AI.random.Next(Array.length maxValuedChoices)
                 let choice = Array.get maxValuedChoices choiceIndex
                 AI.logger.Debug("DetermineChoice, choice for player {0} is: {1}", playerColor, choice.Choice)
-                (playerId, choice.Choice)
+                (player, choice.Choice)
             else
                 AI.logger.Error("playerColor appearantly does not have playerInfo {0}", playerColor)
                 raise (Exception("AI player does not exist, this should be an unreachable case"))
 
         
         /// Evaluate strategies per choice
-        member private this.EvaluateStrategies sourceGameData playerId choice =
+        member private this.EvaluateStrategies sourceGameData player choice =
             let divisor = this.strategyList.Length
 
-            let afterChoiceGameData = sourceGameData.ChooseTurn(playerId, choice)
+            let afterChoiceGameData = sourceGameData.ChooseTurn(player, choice)
 
             let sumEvaluationPoints = this.strategyList 
-                                        |> Seq.map(fun checkStrategy -> checkStrategy(sourceGameData, afterChoiceGameData, playerId, choice))
+                                        |> Seq.map(fun checkStrategy -> checkStrategy(sourceGameData, afterChoiceGameData, player, choice))
                                         |> Seq.map(fun evaluation -> evaluation.Value)
                                         |> Seq.sum
             { Choice = choice; Value = sumEvaluationPoints / float(divisor) }
@@ -100,7 +100,7 @@ type AI = {
         // =====================    AI non-fortress strategies to be checked for each possible move      =====================
 
         /// Border strategy, a tile at the board border is a better choice than a tile in the middle of the board
-        member private this.borderStrategy(sourceGameData : Game, afterChoiceGameData : Game, playerId : Guid, choice : int) : AIEvaluation =
+        member private this.borderStrategy(sourceGameData : Game, afterChoiceGameData : Game, player : Player, choice : int) : AIEvaluation =
             let neighbourCount(gameData : Game, tile) =
                 let eval = gameData.Board.TileList.[tile]
                 eval.NeighbourCount
@@ -109,7 +109,7 @@ type AI = {
 
 
         /// Game over strategy, if the choice invokes game over and I won the game, it is a good choice
-        member private this.gameOverStrategy(sourceGameData : Game, afterChoiceGameData : Game, playerId : Guid, choice : int) : AIEvaluation =
+        member private this.gameOverStrategy(sourceGameData : Game, afterChoiceGameData : Game, player : Player, choice : int) : AIEvaluation =
             let didIWin playerColor gameStats = 
                 match playerColor with
                     |   TileType.yellow ->  gameStats.YellowCount > gameStats.BlueCount && 
@@ -126,7 +126,7 @@ type AI = {
 
             if afterChoiceGameData.Board.GameOver then
                 let gameStats = afterChoiceGameData.GetGameStats()
-                let playerColor = sourceGameData.GetPlayerColor(playerId) // player color from initial situation
+                let playerColor = sourceGameData.GetPlayerColor(player) // player color from initial situation
                 if didIWin playerColor gameStats then
                     highValue
                 else
@@ -136,7 +136,7 @@ type AI = {
 
 
         /// Point count strategy, a choice that wins more points is better than a a choice which wins lesser points
-        member private this.pointCountStrategy(sourceGameData : Game,  afterChoiceGameData : Game, playerId : Guid, choice : int) : AIEvaluation =
+        member private this.pointCountStrategy(sourceGameData : Game,  afterChoiceGameData : Game, player : Player, choice : int) : AIEvaluation =
             let countPoints gameData playerColor =
                 gameData.Board.TileList
                     |> Map.toSeq
@@ -145,7 +145,7 @@ type AI = {
                     |> Seq.map(fun e -> e.TileValue)
                     |> Seq.sum
 
-            let playerColor = sourceGameData.GetPlayerColor(playerId)
+            let playerColor = sourceGameData.GetPlayerColor(player)
 
             let preChoicePoints = countPoints sourceGameData playerColor
             let afterChoicePoints = countPoints afterChoiceGameData playerColor
@@ -155,7 +155,7 @@ type AI = {
 
         /// Kill player turn strategy, a choice that kills the turn of the next subsequent player is better than a choice which doesn't kill a player's turn.
         /// A choice which kills two player's turns, such that it is my turn again, is an excellent choice.
-        member private this.killPlayerTurnStrategy(sourceGameData : Game, afterChoiceGameData : Game, playerId : Guid, choice : int) : AIEvaluation =
+        member private this.killPlayerTurnStrategy(sourceGameData : Game, afterChoiceGameData : Game, player : Player, choice : int) : AIEvaluation =
             let whoIsAfterMe gameData = 
                 let newTurn = (gameData.Board.CurrentTurn + 1) % (List.length gameData.Board.TurnOrder)
                 gameData.Board.TurnOrder.[newTurn]

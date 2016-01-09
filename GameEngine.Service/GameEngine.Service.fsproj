@@ -59,8 +59,8 @@
     <Compile Include="ActorSystem.fsi" />
     <Compile Include="ActorSystem.fs" />
     <Compile Include="InternalMessages.fs" />
-    <Compile Include="Player.fsi" />
-    <Compile Include="Player.fs" />
+    <Compile Include="AIPlayer.fsi" />
+    <Compile Include="AIPlayer.fs" />
     <Compile Include="GameRoom.fs" />
     <Compile Include="WaitingRoom.fsi" />
     <Compile Include="WaitingRoom.fs" />

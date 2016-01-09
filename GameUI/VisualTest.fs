@@ -9,7 +9,7 @@ open WebSharper.UI.Next
 open WebSharper.UI.Next.Client
 open WebSharper.UI.Next.Html
 open WebSharper.Jatek
-open GameEngine.Messages
+open GameEngine.Common
 
 module VisualTest=
 

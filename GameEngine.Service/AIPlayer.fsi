@@ -5,6 +5,6 @@ open System
 open Akkling
 open InternalMessages
 
-module Player =
+module AIPlayer =
     val CreateAIPlayerActor : ICanTell<WaitingRoomMessage> -> Guid -> IActorRef<GameServiceConnectionMessage>
 

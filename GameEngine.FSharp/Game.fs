@@ -24,8 +24,8 @@ type Game =
         static member logger = LogManager.GetLogger("debug"); 
 
 
-        member private this.GetPlayerColorAndCheckItIsCurrentPlayer(playerId : Guid) =
-            let playerColor = this.Board.GetPlayerColor(playerId) 
+        member private this.GetPlayerColorAndCheckItIsCurrentPlayer(player : Player) =
+            let playerColor = this.Board.GetPlayerColor(player) 
             let currentColor = this.GetCurrentTurn()
             if playerColor = currentColor then
                 playerColor
@@ -43,8 +43,8 @@ type Game =
 
 
         /// Let a player join a game
-        member this.JoinGame (playerId : Guid) =
-            { this with Board = this.Board.RegisterPlayer(playerId, this.Board.FortressesPerPlayer)}
+        member this.JoinGame (player : Player) =
+            { this with Board = this.Board.RegisterPlayer(player, this.Board.FortressesPerPlayer)}
 
 
         /// Retrieve color of the player for the current turn
@@ -53,23 +53,23 @@ type Game =
 
 
         /// Retrieve possible moves for the current turn
-        member this.GetPossibleMoves(playerId : Guid) = 
-            Game.logger.Debug("GetPossibleMoves({0})", playerId)
-            let playerColor = this.GetPlayerColorAndCheckItIsCurrentPlayer(playerId)
+        member this.GetPossibleMoves(player : Player) = 
+            Game.logger.Debug("GetPossibleMoves({0})", player)
+            let playerColor = this.GetPlayerColorAndCheckItIsCurrentPlayer(player)
             let candidates = this.Board.FindChoiceCandidates(playerColor)
             new List<_>(candidates)
 
 
         /// Choose normal turn
-        member this.ChooseTurn(playerId : Guid, id) =
-            let playerColor = this.GetPlayerColorAndCheckItIsCurrentPlayer(playerId)
+        member this.ChooseTurn(player : Player, id) =
+            let playerColor = this.GetPlayerColorAndCheckItIsCurrentPlayer(player)
             let newBoard = this.Board.ChooseTurn(playerColor, id, false)
             { this with Board = newBoard }
 
 
         /// Choose fortressed turn
-        member this.ChooseFortressedTurn(playerId : Guid, id) = 
-            let playerColor = this.GetPlayerColorAndCheckItIsCurrentPlayer(playerId)
+        member this.ChooseFortressedTurn(player : Player, id) = 
+            let playerColor = this.GetPlayerColorAndCheckItIsCurrentPlayer(player)
             let newBoard = this.Board.ChooseTurn(playerColor, id, true)
             { this with Board = newBoard }
 
@@ -90,13 +90,12 @@ type Game =
 
 
         /// Retrieve the color for the requested player
-        member this.WhatIsMyColor(playerId : Guid) =
-            this.Board.GetPlayerColor(playerId)
-
+        member this.WhatIsMyColor(player : Player) =
+            this.Board.GetPlayerColor(player)
 
         /// Retrieve current status for player
-        member this.WhatIsMyStatus(playerId : Guid) =
-            let (status, board) = this.Board.GetStatus(playerId)
+        member this.WhatIsMyStatus(player : Player) =
+            let (status, board) = this.Board.GetStatus(player)
             (status, {this with Board = board})
 
         /// Clone this instance
@@ -104,16 +103,21 @@ type Game =
             { this with Board = this.Board.Clone()}
 
         /// Get the player's color
-        member this.GetPlayerColor(playerId:Guid) =
-            this.Board.GetPlayerColor(playerId)
+        member this.GetPlayerColor(player : Player) =
+            this.Board.GetPlayerColor(player)
 
         /// Get player info by player id
-        member this.GetPlayerInfo(playerId : Guid) =
-            this.Board.GetPlayerInformation(playerId)
+        member this.GetPlayerInfo(player : Player) =
+            this.Board.GetPlayerInformation(player)
 
         /// Get player info by tile color
         member this.GetPlayerInfo(tileColor : TileType) =
             this.Board.GetPlayerInformation(tileColor)
+
+        /// Inform all players that the game has started
+        member this.InformGameStartedToPlayers() =
+            this.Board.InformGameStartedToPlayers()
+            this
 
         member this.SetTurn()=
             { this with Board = this.Board.SetTurn()}

@@ -10,7 +10,7 @@ open GameActorSystem
 open InternalMessages
 
 
-module Player =
+module AIPlayer =
     /// Sends a message to the waiting room after a waiting period, and awaits the waiting room's response.
     /// If this response says that this actor is part of the game, the AI will play, otherwise it terminates.
     let AIPlayerActor waitingRoom id gameId (mailbox:Actor<GameServiceConnectionMessage>) =

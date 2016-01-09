@@ -13,7 +13,7 @@ open GameRoom
 open GameActorSystem
 open InternalMessages
 
-open Player
+open AIPlayer
 
 [<AutoOpen>]
 module WaitingRoom =

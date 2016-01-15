@@ -57,7 +57,7 @@ module GameRoom =
         let logger = Logging.logDebug mailbox
         logger "Start GameRoomActor"
 
-        let playerList = players |> Set.toList
+        let playerList = players |> Set.toList |> List.sortBy(fun p -> p.PlayerType)
 
         let rec gameLoop (gameState:Game) = actor {
             let! message = mailbox.Receive()
@@ -82,10 +82,11 @@ module GameRoom =
                             let sendMessageToPlayer (message:PlayerStatus) =
                                 let messageToSend = 
                                     match message with
-                                    | PlayerStatus.ItsMyTurn      -> PlayerMessageResponse.ItIsYourTurn
-                                    | PlayerStatus.NoMoves        -> PlayerMessageResponse.NoMoves
-                                    | PlayerStatus.GameOver       -> PlayerMessageResponse.GameOver
-                                    | PlayerStatus.GameStarted(x) -> PlayerMessageResponse.GameStarted(x)
+                                    | PlayerStatus.ItsMyTurn(x)    -> PlayerMessageResponse.ItIsYourTurn(x)
+                                    | PlayerStatus.NoMoves         -> PlayerMessageResponse.NoMoves
+                                    | PlayerStatus.GameOver        -> PlayerMessageResponse.GameOver
+                                    | PlayerStatus.GameStarted(x)  -> PlayerMessageResponse.GameStarted(x, (gameData.RetrieveBoardData()))
+                                    | PlayerStatus.BoardHasChanged -> PlayerMessageResponse.BoardHasChanged(gameData.GetBoardState())
                                     | _         -> failwith "Unrecognized message"
 
                                 playerIdentity.Ref <! ToPlayer(messageToSend)
@@ -98,7 +99,7 @@ module GameRoom =
         let gameData = gameData.InformGameStartedToPlayers()
         logger "send game started to all players"
 
-        let gameData = gameData.SetTurn()
+        gameData.SetTurn() |> ignore
         logger "set the first turn"
 
         // === Start game room ===

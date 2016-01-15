@@ -53,12 +53,9 @@
   </Choose>
   <Import Project="$(FSharpTargetsPath)" Condition="Exists('$(FSharpTargetsPath)')" />
   <ItemGroup>
-    <Compile Include="TileColor.fs" />
     <Compile Include="GameStats.fs" />
     <Compile Include="Player.fsi" />
     <Compile Include="Player.fs" />
-    <Compile Include="HexagonTileSerializable.fs" />
-    <Compile Include="BoardSerializable.fs" />
     <Compile Include="HexagonTile.fs" />
     <Compile Include="Board.fs" />
     <Compile Include="GameConfiguration.fs" />

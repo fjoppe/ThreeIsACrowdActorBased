@@ -52,6 +52,9 @@
   <ItemGroup>
     <Compile Include="AssemblyInfo.fs" />
     <Compile Include="TileType.fs" />
+    <Compile Include="TileColor.fs" />
+    <Compile Include="HexagonTileSerializable.fs" />
+    <Compile Include="BoardSerializable.fs" />
     <Compile Include="Messages.fs" />
     <Content Include="packages.config" />
   </ItemGroup>

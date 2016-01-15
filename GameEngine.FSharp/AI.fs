@@ -21,41 +21,41 @@ type AI = {
 
         member private this.strategyList = [this.borderStrategy; this.gameOverStrategy; this.pointCountStrategy; this.killPlayerTurnStrategy]
 
-        member private this.aithread = async {
-            do! Async.Sleep(int(AI.random.NextDouble() * AI.maxTime * float(1000)))
-            do this.Execute
-        }
+//        member private this.aithread = async {
+//            do! Async.Sleep(int(AI.random.NextDouble() * AI.maxTime * float(1000)))
+//            do this.Execute
+//        }
 
 
 
         // =====================    Private members      =====================
-        member private this.Execute =
-            try
-                AI.logger.Debug("Execute AI procedure")
-                use lock = FServiceIO.lockGame(this.GameId)
-                let gameData = FServiceIO.LoadGameData(this.GameId)
-                if gameData.IsSome then
-                    let (playerId, choice) = this.DetermineChoice(gameData.Value)
-                    let newGameData = gameData.Value.ChooseTurn(playerId, choice)
-
-                    AI.logger.Debug(String.Format("Next turn: {0}", newGameData.GetCurrentTurn()))
-
-                    if newGameData.CurrentTurnIsAI() then 
-                        AI.logger.Debug("This player is AI: {0}", newGameData.GetCurrentTurn())
-
-                        FServiceIO.SaveGameData(this.GameId, newGameData)
-                        this.aiStart()
-                    else
-                        let newGameDataHumanProcessing = { newGameData with AIProcessing = false}
-                        FServiceIO.SaveGameData(this.GameId, newGameDataHumanProcessing )
-                        AI.logger.Debug("End AI")
-                else
-                    AI.logger.Error("No game data available for {0}", this.GameId)
-                    raise (Exception("No game data available"))
-            with
-                | e -> AI.logger.Error(e)
-                       reraise()
-            ()
+//        member private this.Execute =
+//            try
+//                AI.logger.Debug("Execute AI procedure")
+//                use lock = FServiceIO.lockGame(this.GameId)
+//                let gameData = FServiceIO.LoadGameData(this.GameId)
+//                if gameData.IsSome then
+//                    let (playerId, choice) = this.DetermineChoice(gameData.Value)
+//                    let newGameData = gameData.Value.ChooseTurn(playerId, choice)
+//
+//                    AI.logger.Debug(String.Format("Next turn: {0}", newGameData.GetCurrentTurn()))
+//
+//                    if newGameData.CurrentTurnIsAI() then 
+//                        AI.logger.Debug("This player is AI: {0}", newGameData.GetCurrentTurn())
+//
+//                        FServiceIO.SaveGameData(this.GameId, newGameData)
+//                        this.aiStart()
+//                    else
+//                        let newGameDataHumanProcessing = { newGameData with AIProcessing = false}
+//                        FServiceIO.SaveGameData(this.GameId, newGameDataHumanProcessing )
+//                        AI.logger.Debug("End AI")
+//                else
+//                    AI.logger.Error("No game data available for {0}", this.GameId)
+//                    raise (Exception("No game data available"))
+//            with
+//                | e -> AI.logger.Error(e)
+//                       reraise()
+//            ()
 
 
         /// Determine choice to make
@@ -69,7 +69,7 @@ type AI = {
                 let player = playerInfo.Value.Player
                 let possibleChoices = gameData.GetPossibleMoves(player)
 
-                AI.logger.Debug("possible choices: {0}", possibleChoices.Count)
+                AI.logger.Debug("possible choices: {0}", possibleChoices.Length)
 
                 let valuedChoices = possibleChoices |> Seq.map(fun choice -> this.EvaluateStrategies gameData player choice)
                 let maxValue = valuedChoices |> Seq.map(fun choice -> choice.Value) |> Seq.max
@@ -184,8 +184,8 @@ type AI = {
 
 
         // =====================    Public members      =====================
-        member this.aiStart() =
-            Async.Start(this.aithread)
+//        member this.aiStart() =
+//            Async.Start(this.aithread)
 
 
         // =====================    Static members      =====================

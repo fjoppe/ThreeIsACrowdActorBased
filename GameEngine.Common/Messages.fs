@@ -15,8 +15,9 @@ type PlayerMessage =
 type PlayerMessageResponse =
     | YourId of string
     | YouAreRegisterd of IActorRef
-    | GameStarted of TileType
-    | ItIsYourTurn
+    | GameStarted of TileType * BoardSerializable
+    | BoardHasChanged of TileColor list
+    | ItIsYourTurn of int list
     | NoMoves
     | GameOver
     | Failed

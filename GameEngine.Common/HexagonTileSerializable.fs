@@ -1,4 +1,4 @@
-﻿namespace GameEngine.FSharp
+﻿namespace GameEngine.Common
 
 open System
 open System.Runtime.Serialization

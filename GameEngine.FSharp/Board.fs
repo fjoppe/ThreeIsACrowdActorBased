@@ -12,9 +12,9 @@ module Map =
 
 
 /// Type of player
-type PlayerType = 
-    | Human
-    | Computer
+//type PlayerType = 
+//    | Human
+//    | Computer
 
 
 ///<summary>
@@ -42,8 +42,8 @@ type PlayerInfo =
         [<field: DataMember(Name="Fortresses") >]
         Fortresses  : int;
 
-        [<field: DataMember(Name="PlayerType") >]
-        PlayerType  : PlayerType
+//        [<field: DataMember(Name="PlayerType") >]
+//        PlayerType  : PlayerType
 
         [<field: DataMember(Name="Status") >]
         Status      : Queue<PlayerStatus>
@@ -184,8 +184,9 @@ type Board =
         ///</returns>
         member private this.FindTileType startTile direction searchTileType (stopCondition: HexagonTile -> bool) =
             let startNode = HexagonNode.Node(startTile)                             //  convert to node, required input for this.RetrieveLine
-            let stopFindCondition elm = elm.TileType = searchTileType ||            //  stop when tilecolor is found
-                                        stopCondition(elm)                          //  stop when stopCondition is met
+            let stopFindCondition (elm:HexagonTile) = 
+                elm.TileType = searchTileType ||            //  stop when tilecolor is found
+                stopCondition(elm)                          //  stop when stopCondition is met
             let investigationSeq = 
                 this.RetrieveLine startNode direction stopFindCondition             //  retrieve a sequence of tiles in the specified direction
             let result = 
@@ -206,9 +207,10 @@ type Board =
         /// <returns>
         ///     Returns a HexagonNode, which is a Node with the found candidate, or Empty when no candidate was found.
         ///</returns>
-        member private this.FindChoiceCandidateForDirection startTile direction =
-            let stopCondition elm = elm.TileType = startTile.TileType ||            //  stop when tilecolor is the same color as the start tile
-                                    elm.Fortress=true                               //  or when a tile is fortressed
+        member private this.FindChoiceCandidateForDirection (startTile:HexagonTile) direction =
+            let stopCondition (elm:HexagonTile) = 
+                elm.TileType = startTile.TileType ||            //  stop when tilecolor is the same color as the start tile
+                elm.Fortress=true                               //  or when a tile is fortressed
             let searchBoardLine = this.FindTileType startTile direction TileType.board stopCondition
             let result =
                 if Seq.isEmpty(searchBoardLine) then Empty
@@ -226,8 +228,9 @@ type Board =
         ///     Returns an empty sequence when nothing was found
         ///</returns>
         member private this.FindTurnableTilesInLine startTile tileType direction =
-            let stopCondition elm = elm.TileType = TileType.board     ||                //  stop when a board tile is found
-                                    (elm.Fortress = true && elm.TileType <> tileType)   //  or when a tile is fortressed for a non searched color
+            let stopCondition (elm:HexagonTile) = 
+                elm.TileType = TileType.board     ||                //  stop when a board tile is found
+                (elm.Fortress = true && elm.TileType <> tileType)   //  or when a tile is fortressed for a non searched color
             let searchBoardLine = this.FindTileType startTile direction tileType stopCondition
             let result = 
                 if Seq.isEmpty(searchBoardLine) then Seq.empty                          //  Return empty sequence when nothing was found
@@ -260,7 +263,7 @@ type Board =
         /// <returns>
         ///     Returns a sequence of HexagonNode, which are potential choices in regard to the start node
         ///</returns>
-        member private this.FindChoiceCandidatesForTile startTile =
+        member private this.FindChoiceCandidatesForTile (startTile:HexagonTile) =
             let findChoiceCandidate = this.FindChoiceCandidateForDirection startTile
             this.ApplyForAllDirections findChoiceCandidate
             |> Seq.filter(fun elm -> elm <> Empty)
@@ -410,8 +413,9 @@ type Board =
         member this.SetTurn() = 
             let color = this.GetCurrentTurn()
             let currentPlayer =  this.GetPlayerInfo(color, fun pi -> pi)
-            Player.SendMessage (currentPlayer.Player) (PlayerStatus.ItsMyTurn)
-            this.UpdatePlayer(currentPlayer)
+            Player.SendMessage (currentPlayer.Player) (PlayerStatus.ItsMyTurn(this.FindChoiceCandidates(color) |> Seq.toList))
+            this
+//            this.UpdatePlayer(currentPlayer)
 
 
         /// Turns tiles for the specified move
@@ -450,8 +454,8 @@ type Board =
                 {Id = elm.Id; X=elm.X; Y=elm.Y; TileType=elm.TileType; TileValue=elm.TileValue; Fortress=elm.Fortress}
             let convertedList = this.GetTileList() |> Map.Values |> Seq.map(fun elm -> ConvertHexagonTileToSerializable(elm))
             {
-                FortressesPerPlayer = this.FortressesPerPlayer;
-                ActiveTileList = Seq.toArray(convertedList);
+                FortressesPerPlayer = this.FortressesPerPlayer
+                ActiveTileList = Seq.toArray convertedList
             }
 
 
@@ -464,7 +468,7 @@ type Board =
         member this.GetBoardState() =
             let ConvertHexagonTileToTileColor(elm : HexagonTile) : TileColor =
                 { Id = elm.Id; TileType = elm.TileType; Fortress = elm.Fortress }
-            this.GetTileList() |> Map.Values |> Seq.map (fun elm -> ConvertHexagonTileToTileColor(elm)) |> Seq.toArray
+            this.GetTileList() |> Map.Values |> Seq.map (fun elm -> ConvertHexagonTileToTileColor(elm)) |> Seq.toList
         
         
         ///<summary>
@@ -501,7 +505,7 @@ type Board =
                     Player      = player; 
                     Color       = this.GetColor(playersNew);
                     Fortresses  = fortressesPerPlayer; 
-                    PlayerType  = PlayerType.Human
+//                    PlayerType  = PlayerType.Human
                     Status      = new Queue<_>();
                 }
             let playersNew = List.append playersNew [newPlayer]

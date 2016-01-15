@@ -41,15 +41,15 @@ type FService() =
         FService.LockLoadAndExecute(gameId, execute)
 
 
-    member private this.StartAI(gameId) =
-        let ai = AI.Create(gameId)
-        ai.aiStart()
+//    member private this.StartAI(gameId) =
+//        let ai = AI.Create(gameId)
+//        ai.aiStart()
 
 
 
-    member this.GetUniqueIdentifier() = 
-        FService.logger.Debug("GetUniqueIdentifier")
-        Guid.NewGuid()
+//    member this.GetUniqueIdentifier() = 
+//        FService.logger.Debug("GetUniqueIdentifier")
+//        Guid.NewGuid()
 
 
 //        member this.StartNewGame configuration =
@@ -130,17 +130,17 @@ type FService() =
         FService.Execute(gameId, execute)
             
 
-    member this.WhatIsMyStatus gameId playerId =
-//            FService.logger.Debug("WhatIsMyStatus")
-        let execute(gameData:Game) =
-            let (status, gameData) = gameData.WhatIsMyStatus(playerId)
-            if status = PlayerStatus.NoStatus && gameData.CurrentTurnIsAI() && not gameData.AIProcessing then
-                FService.logger.Debug("Current Turn is AI for processing")
-                this.StartAI(gameId)
-                let gameDataProcessingAI = { gameData with AIProcessing = true }
-                FServiceIO.SaveGameData(gameId, gameDataProcessingAI )
-            else
-                FServiceIO.SaveGameData(gameId, gameData)
-            status
-        FService.Execute(gameId, execute)
+//    member this.WhatIsMyStatus gameId playerId =
+////            FService.logger.Debug("WhatIsMyStatus")
+//        let execute(gameData:Game) =
+//            let (status, gameData) = gameData.WhatIsMyStatus(playerId)
+//            if status = PlayerStatus.NoStatus && gameData.CurrentTurnIsAI() && not gameData.AIProcessing then
+//                FService.logger.Debug("Current Turn is AI for processing")
+//                this.StartAI(gameId)
+//                let gameDataProcessingAI = { gameData with AIProcessing = true }
+//                FServiceIO.SaveGameData(gameId, gameDataProcessingAI )
+//            else
+//                FServiceIO.SaveGameData(gameId, gameData)
+//            status
+//        FService.Execute(gameId, execute)
 

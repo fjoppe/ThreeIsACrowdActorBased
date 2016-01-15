@@ -19,7 +19,7 @@ module AIPlayer =
         ActorSystem.Scheduler.ScheduleTellOnce(
             TimeSpan.FromSeconds(float(waitForAIToRegister)), 
             waitingRoom, 
-            AddAIPlayer(gameId, PlayerIdentity.Create id mailbox.Self)
+            AddAIPlayer(gameId, PlayerIdentity.Create id mailbox.Self Computer)
         )
 
         let rec aiPlayerLoop() = actor {

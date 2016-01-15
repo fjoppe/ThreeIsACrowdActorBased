@@ -57,7 +57,7 @@ type Game =
             Game.logger.Debug("GetPossibleMoves({0})", player)
             let playerColor = this.GetPlayerColorAndCheckItIsCurrentPlayer(player)
             let candidates = this.Board.FindChoiceCandidates(playerColor)
-            new List<_>(candidates)
+            Seq.toList candidates
 
 
         /// Choose normal turn
@@ -122,16 +122,17 @@ type Game =
         member this.SetTurn()=
             { this with Board = this.Board.SetTurn()}
 
-        member this.CurrentTurnIsAI() =
-            if this.Board.GameOver then
-                false
-            else
-                let tileColor = this.GetCurrentTurn()
-                let playerInfo = this.GetPlayerInfo(tileColor)
-                if playerInfo.IsSome then
-                    let playerInfo = playerInfo.Value
-                    if playerInfo.PlayerType = PlayerType.Computer then true
-                    else false
-                else
-                    raise(Exception("Unknown player"))
+
+//        member this.CurrentTurnIsAI() =
+//            if this.Board.GameOver then
+//                false
+//            else
+//                let tileColor = this.GetCurrentTurn()
+//                let playerInfo = this.GetPlayerInfo(tileColor)
+//                if playerInfo.IsSome then
+//                    let playerInfo = playerInfo.Value
+//                    if playerInfo.PlayerType = PlayerType.Computer then true
+//                    else false
+//                else
+//                    raise(Exception("Unknown player"))
 

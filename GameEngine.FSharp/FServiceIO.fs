@@ -10,6 +10,7 @@ open System.Runtime.Serialization
 open System.ServiceModel.Activation
 open NLog;
 
+open GameEngine.Common
 
 type FServiceIO = 
     static member private logger = LogManager.GetLogger("debug")

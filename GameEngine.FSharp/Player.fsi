@@ -4,11 +4,12 @@ open GameEngine.Common
 
 type PlayerStatus =
     | NoStatus      
-    | ItsMyTurn 
+    | ItsMyTurn of int list
     | TriggerAI 
     | NoMoves   
     | GameOver  
     | GameStarted of TileType
+    | BoardHasChanged
 
 [<Sealed>]
 type Player =

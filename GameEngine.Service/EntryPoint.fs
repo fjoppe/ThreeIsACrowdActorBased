@@ -97,7 +97,7 @@ module EntryPoint =
             ``registration requester`` <! YouAreRegisterd(Akkling.ActorRefs.untyped(playerConnection))
             logger "Player is registered"
 
-            WaitingRoom <! AddPlayer(PlayerIdentity.Create id gameServiceConnection)
+            WaitingRoom <! AddPlayer(PlayerIdentity.Create id gameServiceConnection Human)
             logger "Player is send to a waiting room"
 
             return! (loop ((ConnectionChannel.Create playerConnection gameServiceConnection)::connectionList))

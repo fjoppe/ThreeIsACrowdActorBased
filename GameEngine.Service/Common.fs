@@ -28,5 +28,7 @@ module Common =
     /// Create a readable Actor name
     let CreateName s g = sprintf "%s_%A" s g
 
-
+    type PlayerType =
+        | Human
+        | Computer
 

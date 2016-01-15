@@ -1,4 +1,4 @@
-﻿namespace GameEngine.FSharp
+﻿namespace GameEngine.Common
 
 open System
 open System.Runtime.Serialization
@@ -9,8 +9,8 @@ open System.Runtime.Serialization
 [<DataContract(Namespace ="urn:TIC")>]
 type BoardSerializable = {
     [<field: DataMember(Name="FortressesPerPlayer") >]
-    FortressesPerPlayer : int;
+    FortressesPerPlayer : int
 
     [<field: DataMember(Name="ActiveTileList") >]
-    ActiveTileList : HexagonTileSerializable[];
+    ActiveTileList : HexagonTileSerializable[]
     }

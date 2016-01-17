@@ -69,6 +69,9 @@
     <Compile Include="GameService.fs" />
     <None Include="CallRemoteActor.fsx" />
     <None Include="FailFast.fsx" />
+    <None Include="Akka.config">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
     <None Include="App.config" />
     <Content Include="packages.config" />
   </ItemGroup>

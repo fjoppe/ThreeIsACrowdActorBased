@@ -1,5 +1,6 @@
 ﻿namespace GameEngine.FSharp
 
+open System
 open GameEngine.Common
 
 type PlayerStatus =
@@ -9,16 +10,17 @@ type PlayerStatus =
     | NoMoves   
     | GameOver  
     | GameStarted of TileType
-    | BoardHasChanged
+    | BoardHasChanged of TileColor list
 
 [<Sealed>]
 type Player =
-      interface System.IComparable
-      override Equals : yobj:obj -> bool
-      override GetHashCode : unit -> int
+    member IdentifiesWith : Guid -> bool
+    interface System.IComparable
+    override Equals : yobj:obj -> bool
+    override GetHashCode : unit -> int
+
 
 [<CompilationRepresentation(CompilationRepresentationFlags.ModuleSuffix)>]
 module Player = 
-    val Create      : System.Guid -> (PlayerStatus -> unit) -> Player
-    val SendMessage : Player -> PlayerStatus -> unit
-
+    val Create          : System.Guid -> (PlayerStatus -> unit) -> Player
+    val SendMessage     : Player -> PlayerStatus -> unit

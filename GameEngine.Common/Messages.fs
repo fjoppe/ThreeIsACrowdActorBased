@@ -8,19 +8,19 @@ open Akka.Actor
 
 
 type PlayerMessage =
-    | Choice
+    | Choice of int
     | WhatIsMyId
 
 
 type PlayerMessageResponse =
-    | YourId of string
+    | YourId of Guid
     | YouAreRegisterd of IActorRef
     | GameStarted of TileType * BoardSerializable
     | BoardHasChanged of TileColor list
     | ItIsYourTurn of int list
     | NoMoves
     | GameOver
-    | Failed
+    | Failed of String
     | Nothing
 
 

@@ -88,7 +88,7 @@ type AI = {
         member private this.EvaluateStrategies sourceGameData player choice =
             let divisor = this.strategyList.Length
 
-            let afterChoiceGameData = sourceGameData.ChooseTurn(player, choice)
+            let afterChoiceGameData = sourceGameData.ChooseTurn(player, choice, false)
 
             let sumEvaluationPoints = this.strategyList 
                                         |> Seq.map(fun checkStrategy -> checkStrategy(sourceGameData, afterChoiceGameData, player, choice))

@@ -11,7 +11,7 @@ type PlayerStatus =
     | NoMoves   
     | GameOver  
     | GameStarted of TileType
-    | BoardHasChanged
+    | BoardHasChanged of TileColor list
 
 
 [<CustomEquality; CustomComparison>]
@@ -20,6 +20,7 @@ type Player = {
         SendMessage : (PlayerStatus -> unit)
     }    
     with
+        member this.IdentifiesWith i = this.Id = i
         override x.Equals(yobj) =
             match yobj with
             | :? Player as y -> (x.Id = y.Id)
@@ -37,4 +38,5 @@ type Player = {
 module Player =
     let Create i sf = {Id = i; SendMessage = sf}
     let SendMessage p m = p.SendMessage(m)
+
 

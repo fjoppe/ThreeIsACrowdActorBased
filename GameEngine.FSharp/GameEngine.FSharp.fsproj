@@ -60,7 +60,6 @@
     <Compile Include="Board.fs" />
     <Compile Include="GameConfiguration.fs" />
     <Compile Include="Game.fs" />
-    <None Include="IFSharpService.fs" />
     <Compile Include="FServiceIO.fs" />
     <Compile Include="AI.fs" />
     <Compile Include="FService.svc.fs" />

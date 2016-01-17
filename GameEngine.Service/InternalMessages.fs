@@ -7,8 +7,6 @@ open GameEngine.FSharp
 open GameEngine.Common
 
 module InternalMessages =
-    type GameRoomMessage = class end
-
     type DynamicConnection =
         |   Data of PlayerMessage
         |   LooseConnection

@@ -57,8 +57,8 @@ module EntryPoint =
         loop None
 
 
-    let CreateGameServiceConnectionActor id receiver =
-        spawn ActorSystem (CreateName GameServiceConnection id) (GameServiceConnectionFunc receiver)
+    let CreateGameServiceConnectionActor playerId receiver =
+        spawn ActorSystem (CreateName GameServiceConnection playerId) (GameServiceConnectionFunc receiver)
 
 
     /// This function contains the behavior of the player connection.
@@ -72,8 +72,8 @@ module EntryPoint =
     /// Create a PlayerConnection Actor
     /// A player connection only excepts public/remotely known messages to/from the player.
     /// If you send a message to this connection, you should always get a response.
-    let CreatePlayerConnectionActor id (gameServiceConnection:IActorRef<GameServiceConnectionMessage>) =
-        spawn ActorSystem (CreateName PlayerConnection id) (actorOf2 (PlayerConnectionFunc gameServiceConnection))
+    let CreatePlayerConnectionActor playerId (gameServiceConnection:IActorRef<GameServiceConnectionMessage>) =
+        spawn ActorSystem (CreateName PlayerConnection playerId) (actorOf2 (PlayerConnectionFunc gameServiceConnection))
 
 
     type ConnectionChannel = {
@@ -90,14 +90,15 @@ module EntryPoint =
         let rec loop connectionList = actor {
             let! ``registration requester`` = mailbox.Receive()
             logger "Register new player"
-            let id = Guid.NewGuid()
-            let gameServiceConnection = CreateGameServiceConnectionActor id ``registration requester``
-            let playerConnection = CreatePlayerConnectionActor id gameServiceConnection
+            let playerId = Guid.NewGuid()
+            logger (sprintf "Created player id: %A" playerId)
+            let gameServiceConnection = CreateGameServiceConnectionActor playerId ``registration requester``
+            let playerConnection = CreatePlayerConnectionActor playerId gameServiceConnection
             logger "Send 'you are registered'"
             ``registration requester`` <! YouAreRegisterd(Akkling.ActorRefs.untyped(playerConnection))
             logger "Player is registered"
 
-            WaitingRoom <! AddPlayer(PlayerIdentity.Create id gameServiceConnection Human)
+            WaitingRoom <! AddPlayer(PlayerIdentity.Create playerId gameServiceConnection Human)
             logger "Player is send to a waiting room"
 
             return! (loop ((ConnectionChannel.Create playerConnection gameServiceConnection)::connectionList))

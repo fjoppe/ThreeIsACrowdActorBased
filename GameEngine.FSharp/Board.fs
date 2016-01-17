@@ -11,12 +11,6 @@ module Map =
     let Values m = m |> Map.toSeq |> Seq.map(fun (a,b) -> b)
 
 
-/// Type of player
-//type PlayerType = 
-//    | Human
-//    | Computer
-
-
 ///<summary>
 /// Direction of traversal
 ///</summary>
@@ -42,11 +36,6 @@ type PlayerInfo =
         [<field: DataMember(Name="Fortresses") >]
         Fortresses  : int;
 
-//        [<field: DataMember(Name="PlayerType") >]
-//        PlayerType  : PlayerType
-
-        [<field: DataMember(Name="Status") >]
-        Status      : Queue<PlayerStatus>
     }
     with
          //  member variables
@@ -66,29 +55,6 @@ type PlayerInfo =
                     { this with Fortresses = this.Fortresses - 1 }
             else
                 this
-
-
-        /// Add a new status message
-        member this.AddMessage(message) =
-            let newQueue = new Queue<_>(this.Status)
-            newQueue.Enqueue(message)
-            { this with Status = newQueue }
-
-        /// Peek message
-        member this.ReadMessage() = 
-            if this.Status.Count = 0 then PlayerStatus.NoStatus
-            else this.Status.Peek()
-
-        /// Remove message
-        member this.RemoveMessage() = 
-            let newQueue = new Queue<_>(this.Status)
-            ignore(newQueue.Dequeue())
-            { this with Status = newQueue }
-
-        member this.SetGameOver() = 
-            let newQueue = new Queue<_>()
-            newQueue.Enqueue(PlayerStatus.GameOver)
-            { this with Status = newQueue }
 
 
 ///<summary>
@@ -118,8 +84,6 @@ type Board =
     with
         //  =====================  Private Statics          =====================
 
-        /// The amount of AI players
-//        static member private numberOfAI = 2
 
         /// Logging tool
         static member logger = LogManager.GetLogger("debug"); 
@@ -282,22 +246,27 @@ type Board =
             this.ApplyForAllDirections findTurnableTiles
 
 
-        /// Get player info by playerId
-        member private this.GetPlayerInfo(player : Player, expression) =
-            let found = this.Players |> Seq.tryFind(fun elm -> elm.Player = player)
-            if found.IsSome then expression(found.Value)
-                else
+        member private this.ProcessPlayerInfo<'a> (player:'a) = function
+            | Some(found) -> found
+            | None        ->
                     Board.logger.Error("Don't know this player: {0}", player);
                     raise(Exception("Unknown player"))
 
 
+        /// Get player info by player
+        member private this.GetPlayerInfo(player : Player) =
+            let found = this.Players |> Seq.tryFind(fun elm -> elm.Player = player)
+            this.ProcessPlayerInfo player found
+
+        /// Get player info by playerId
+        member private this.GetPlayerInfo(playerId : Guid) =
+            let found = this.Players |> Seq.tryFind(fun elm -> elm.Player.IdentifiesWith playerId)
+            this.ProcessPlayerInfo playerId found
+
         /// Get player info by player color
-        member private this.GetPlayerInfo(color:TileType, expression) =
+        member private this.GetPlayerInfo(color:TileType) =
             let found = this.Players |> Seq.tryFind(fun elm -> elm.Color = color)
-            if found.IsSome then expression(found.Value)
-                else
-                    Board.logger.Error("Don't know this color: {0}", color);
-                    raise(Exception("Unknown player"))
+            this.ProcessPlayerInfo color found
 
 
         ///     Get color for a new playerInfo, before it is added to the list
@@ -307,25 +276,6 @@ type Board =
             |   1   ->  TileType.blue
             |   2   ->  TileType.red
             |   _   ->  failwith "exceeds maximum index"
-
-
-        ///     Fill the remaining seats of players with AI players
-//        member private this.FillWithAIPlayers(currentPlayers : PlayerInfo list, fortressesPerPlayer, numberOfAI : int) =
-//            Board.logger.Debug(String.Format("FillWithAIPlayers: {0}", numberOfAI));
-//            let playersNew = currentPlayers
-//            if (List.length playersNew) < 3 then 
-//                let newPlayer = 
-//                    {
-//                        Player      = Guid.NewGuid() ; 
-//                        Color       = this.GetColor(playersNew); 
-//                        Fortresses  = fortressesPerPlayer; 
-//                        PlayerType  = PlayerType.Computer;
-//                        Status      = new Queue<_>();
-//                    }
-//                let playersNew = List.append playersNew [newPlayer]
-//                this.FillWithAIPlayers(playersNew, fortressesPerPlayer, numberOfAI - 1)
-//            else 
-//                playersNew
 
 
         ///<summary>
@@ -359,11 +309,10 @@ type Board =
                                |> Seq.map(fun e -> e.Id)
                                |> Seq.fold(fun (m:Map<int, HexagonTile>) -> m.Remove) allTiles
 
-            let newTileList = newTileList.Add(choiceTile.Id, { choiceTile with TileType = color; Fortress = fortress})              // add turn choice tile
+            let newTileList = newTileList.Add(choiceTile.Id, { choiceTile with TileType = color; Fortress = fortress})                // add turn choice tile
             let newTileList = affectedTiles 
-                              |> Seq.fold(fun (m:Map<int, HexagonTile>) e ->  m.Add(e.Id, { e with TileType = color })) newTileList                         // add affected tiles
+                              |> Seq.fold(fun (m:Map<int, HexagonTile>) e ->  m.Add(e.Id, { e with TileType = color })) newTileList   // add affected tiles
             
-            //this.GetTileList() |> Seq.iter(fun elm -> if not(newTileList.ContainsKey(elm.Id)) then newTileList.Add(elm.Id, elm))  // add remaining elements
             let newBoard = {this with TileList    = newTileList;}
             (newBoard, colorCapture)
 
@@ -397,13 +346,12 @@ type Board =
                 let possibilities = nextTurn.FindChoiceCandidates(nextTurn.GetCurrentTurn())
                 if Seq.isEmpty possibilities then 
                     let nextTurnColor = nextTurn.GetCurrentTurn()
-                    let nextTurnPlayerNoMoves = nextTurn.GetPlayerInfo(nextTurnColor, fun pi -> pi ).AddMessage(PlayerStatus.NoMoves)
-                    let nextTurn = nextTurn.UpdatePlayer(nextTurnPlayerNoMoves)
+                    let skipPlayer = nextTurn.GetPlayerInfo(nextTurnColor).Player
+                    Player.SendMessage skipPlayer PlayerStatus.NoMoves
                     if skips < 3 then
                         initNextTurnRec(nextTurn, skips+1)
                     else
-                        let newPlayers = nextTurn.Players |> List.map(fun elm -> elm.SetGameOver()) 
-                        { nextTurn with Players = newPlayers; GameOver = true }
+                        nextTurn.Players |> List.iter(fun elm -> Player.SendMessage elm.Player PlayerStatus.GameOver) 
                 else
                     nextTurn.SetTurn()
             initNextTurnRec(this, 0)
@@ -412,17 +360,15 @@ type Board =
         /// Set the current turn
         member this.SetTurn() = 
             let color = this.GetCurrentTurn()
-            let currentPlayer =  this.GetPlayerInfo(color, fun pi -> pi)
+            let currentPlayer =  this.GetPlayerInfo(color)
             Player.SendMessage (currentPlayer.Player) (PlayerStatus.ItsMyTurn(this.FindChoiceCandidates(color) |> Seq.toList))
-            this
-//            this.UpdatePlayer(currentPlayer)
 
 
         /// Turns tiles for the specified move
         member private this.InvokePlayerMove(color, id, fortress) =
             let (newBoard, colorCapture) = this.TurnTiles(color, id, fortress)
             let newBoard = newBoard.UpdateTurnOrder(colorCapture)
-            let newBoard = newBoard.UpdatePlayer(this.GetPlayerInfo(color, fun pi -> pi ).ConsumeFortress(fortress))
+            let newBoard = newBoard.UpdatePlayer(this.GetPlayerInfo(color).ConsumeFortress(fortress))
             newBoard
 
 
@@ -490,10 +436,19 @@ type Board =
             }
 
 
+        member this.NotifyPlayersBoardHasChanged() =
+            this.Players |> List.iter
+                (fun p -> 
+                    let boardState = this.GetBoardState()
+                    Player.SendMessage p.Player (PlayerStatus.BoardHasChanged(boardState))
+                )
+
+
         ///     Choose turn for player
         member this.ChooseTurn(color, id, fortress) = 
             let newBoard = this.InvokePlayerMove(color, id, fortress)
-            let newBoard = newBoard.InitNextTurn()
+            newBoard.NotifyPlayersBoardHasChanged()
+            newBoard.InitNextTurn()
             newBoard
 
 
@@ -505,8 +460,6 @@ type Board =
                     Player      = player; 
                     Color       = this.GetColor(playersNew);
                     Fortresses  = fortressesPerPlayer; 
-//                    PlayerType  = PlayerType.Human
-                    Status      = new Queue<_>();
                 }
             let playersNew = List.append playersNew [newPlayer]
             { this with Players = playersNew; }
@@ -522,21 +475,26 @@ type Board =
         member this.GetPlayerColor(player:Player) =
             if List.isEmpty this.Players then TileType.none
             else
-                this.GetPlayerInfo(player, fun pi -> pi.Color)
+                this.GetPlayerInfo(player).Color
+
+        member this.GetPlayerColor(playerId:Guid) =
+            if List.isEmpty this.Players then TileType.none
+            else
+                this.GetPlayerInfo(playerId).Color
 
 
         /// Retrieve Player information by Tile Color
         member this.GetPlayerInformation(tileColor:TileType) =
             if List.isEmpty this.Players then Option.None
             else
-                Option.Some(this.GetPlayerInfo(tileColor, fun pi -> pi))
+                Option.Some(this.GetPlayerInfo(tileColor))
 
 
         /// Retrieve Player information by Tile Color
         member this.GetPlayerInformation(player : Player) =
             if List.isEmpty this.Players then Option.None
             else
-                Option.Some(this.GetPlayerInfo(player, fun pi -> pi))
+                Option.Some(this.GetPlayerInfo(player))
 
 
         ///<summary>
@@ -547,7 +505,7 @@ type Board =
         ///     false   -> the player has no fortresses left
         ///</returns>
         member this.HasFortresses(player:Player) =
-            this.GetPlayerInfo(player, fun pi -> (pi.Fortresses > 0))
+            this.GetPlayerInfo(player).Fortresses > 0
 
 
         /// Gets the color for the current turn
@@ -556,17 +514,7 @@ type Board =
                 this.TurnOrder.[this.CurrentTurn]
             else
                 TileType.none
-        
 
-        /// Retrieve current status for player
-        member this.GetStatus(player : Player) =
-            let playerInfo = this.GetPlayerInfo(player, fun pi ->  pi)
-
-            let currentMessage = playerInfo.ReadMessage()
-            if currentMessage <> PlayerStatus.NoStatus then 
-                (currentMessage, this.UpdatePlayer(playerInfo.RemoveMessage()))
-            else
-                (currentMessage, this)
 
         //  TODO: REMOVE
         /// Clone board instance

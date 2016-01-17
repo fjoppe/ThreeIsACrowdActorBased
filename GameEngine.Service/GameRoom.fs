@@ -14,9 +14,13 @@ open GameActorSystem
 
 module GameRoom =
 
+    type GameRoomMessage =
+        |   PlayerChoice of Guid * int
+
+
 
     /// A player actor connected to a human. Any human events needs to be send to the game via this actor. Also, humans receive messages from this actor.
-    let PlayerActor receiver id gameRoom (mailbox:Actor<DynamicConnection>) =
+    let PlayerActor receiver playerId gameRoom (mailbox:Actor<DynamicConnection>) =
         let logger = Logging.logDebug mailbox
         let loggErr = Logging.logErrorf mailbox
 
@@ -24,8 +28,8 @@ module GameRoom =
 
         let handlePlayerMessage message =
             match message with
-            | WhatIsMyId  -> receiver <! ToPlayer(YourId(id.ToString()))
-            | Choice      -> receiver <! ToPlayer(Nothing)
+            | WhatIsMyId      -> receiver <! ToPlayer(YourId playerId)
+            | Choice(tileId)  -> gameRoom <! PlayerChoice(playerId, tileId)
 
         let rec loop() = actor {
             try
@@ -47,13 +51,27 @@ module GameRoom =
         receiver <! ChangeConnection(mailbox.Self)
         loop()
 
+
     /// Creates a Waitingroom Player Actor
-    let CreatePlayerActor id receiver gameRoom = 
-        spawn ActorSystem (CreateName GamePlayer id) (PlayerActor receiver id gameRoom)
+    let CreatePlayerActor playerId receiver gameRoom = 
+        spawn ActorSystem (CreateName GamePlayer playerId) (PlayerActor receiver playerId gameRoom)
+
+
+    /// Send and message to the player
+    let SendMessageToPlayer (gameData:Game) playerIdentity (message:PlayerStatus) =
+        let messageToSend = 
+            match message with
+            | PlayerStatus.ItsMyTurn(x)       -> PlayerMessageResponse.ItIsYourTurn(x)
+            | PlayerStatus.NoMoves            -> PlayerMessageResponse.NoMoves
+            | PlayerStatus.GameOver           -> PlayerMessageResponse.GameOver
+            | PlayerStatus.GameStarted(x)     -> PlayerMessageResponse.GameStarted(x, (gameData.RetrieveBoardData()))
+            | PlayerStatus.BoardHasChanged(x) -> PlayerMessageResponse.BoardHasChanged(x)
+            | _         -> failwith "Unrecognized message"
+        playerIdentity.Ref <! ToPlayer(messageToSend)
 
 
     /// Game room actor, requires a GameId, three players
-    let GameRoomActor (id:Guid) (players:Set<PlayerIdentity>) (mailbox:Actor<GameRoomMessage>) = 
+    let GameRoomActor (gameId:Guid) (players:Set<PlayerIdentity>) (mailbox:Actor<GameRoomMessage>) = 
         let logger = Logging.logDebug mailbox
         logger "Start GameRoomActor"
 
@@ -61,6 +79,11 @@ module GameRoom =
 
         let rec gameLoop (gameState:Game) = actor {
             let! message = mailbox.Receive()
+            match message with
+            |   PlayerChoice(playerId, tileId) -> 
+                let newGameState = gameState.ChooseTurn(playerId, tileId, false)
+                return! gameLoop newGameState
+            |   _          -> () // do nothing
             return! gameLoop gameState
         }
 
@@ -72,25 +95,15 @@ module GameRoom =
         let levelData = FServiceIO.LoadLevel
         logger "loaded level data"
 
-        let gameData = Game.StartGame levelData id
+        let gameData = Game.StartGame levelData gameId
         logger "started game"
 
         // these are players who enter the game, we add the handler when the game wants to send a message to the player
         let gamePlayerList = 
             playerList 
             |> List.map (fun playerIdentity ->
-                            let sendMessageToPlayer (message:PlayerStatus) =
-                                let messageToSend = 
-                                    match message with
-                                    | PlayerStatus.ItsMyTurn(x)    -> PlayerMessageResponse.ItIsYourTurn(x)
-                                    | PlayerStatus.NoMoves         -> PlayerMessageResponse.NoMoves
-                                    | PlayerStatus.GameOver        -> PlayerMessageResponse.GameOver
-                                    | PlayerStatus.GameStarted(x)  -> PlayerMessageResponse.GameStarted(x, (gameData.RetrieveBoardData()))
-                                    | PlayerStatus.BoardHasChanged -> PlayerMessageResponse.BoardHasChanged(gameData.GetBoardState())
-                                    | _         -> failwith "Unrecognized message"
-
-                                playerIdentity.Ref <! ToPlayer(messageToSend)
-                            let player = GameEngine.FSharp.Player.Create playerIdentity.Id sendMessageToPlayer
+                            let sendMessageToPlayerFunc = SendMessageToPlayer gameData playerIdentity
+                            let player = GameEngine.FSharp.Player.Create playerIdentity.Id sendMessageToPlayerFunc
                             player)
 
         let gameData = gamePlayerList |> List.fold (fun (gd:Game) player -> gd.JoinGame player) gameData
@@ -99,7 +112,7 @@ module GameRoom =
         let gameData = gameData.InformGameStartedToPlayers()
         logger "send game started to all players"
 
-        gameData.SetTurn() |> ignore
+        gameData.SetTurn() 
         logger "set the first turn"
 
         // === Start game room ===

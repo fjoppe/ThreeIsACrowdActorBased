@@ -38,7 +38,7 @@ module WaitingRoom =
 
 
     /// A player actor connected to a human. Any human events needs to be send to the game via this actor. Also, humans receive messages from this actor.
-    let PlayerActor receiver waitingRoom id (mailbox:Actor<DynamicConnection>) =
+    let PlayerActor playerId receiver waitingRoom (mailbox:Actor<DynamicConnection>) =
         let logger = Logging.logDebug mailbox
         let loggErr = Logging.logErrorf mailbox
 
@@ -46,8 +46,9 @@ module WaitingRoom =
 
         let handlePlayerMessage message =
             match message with
-            | WhatIsMyId  -> receiver <! ToPlayer(YourId(id.ToString()))
-            | Choice      -> receiver <! ToPlayer(Nothing)
+            | WhatIsMyId  -> receiver <! ToPlayer(YourId playerId)
+            | Choice(id)  -> receiver <! ToPlayer(Failed "Illegal in this mode: Choice")
+
 
         /// the player behavior while waiting in the waiting room for a game
         let rec waitForGameRoomResponse() = actor {
@@ -74,9 +75,8 @@ module WaitingRoom =
 
 
     /// Creates a Waitingroom Player Actor
-    let CreatePlayerActor receiver waitingRoom = 
-        let id = Guid.NewGuid()
-        spawn ActorSystem (CreateName Player id) (PlayerActor receiver waitingRoom id)
+    let CreatePlayerActor playerIdentity waitingRoom = 
+        spawn ActorSystem (CreateName Player playerIdentity.Id) (PlayerActor playerIdentity.Id playerIdentity.Ref waitingRoom)
 
 
     /// Waiting room actor, which receives incoming player request for a game. Starts a game after three players entered the waiting room.
@@ -103,7 +103,7 @@ module WaitingRoom =
             | AddPlayer(candidate)    -> 
                 if not(state.Players.Contains candidate) then 
                     logger (sprintf "Add Player: %A" candidate.Id)
-                    let selfsupportive = CreatePlayerActor candidate.Ref mailbox.Self 
+                    let selfsupportive = CreatePlayerActor candidate mailbox.Self 
                     return! continueWith (state.AddPlayer candidate)
             | RemovePlayer(candidate) -> 
                 if    (state.Players.Contains candidate) then 
@@ -112,7 +112,7 @@ module WaitingRoom =
             | AddAIPlayer(gameId, candidate) -> 
                 if gameId <> state.GameId then 
                     logger (sprintf "Abandon AI Player: %A" candidate.Id)
-                    candidate.Ref <! ToPlayer(Failed)
+                    candidate.Ref <! ToPlayer(Failed "rejected")
                 if not(state.Players.Contains candidate) then 
                     logger (sprintf "Add AI Player: %A" candidate.Id)
                     return! continueWith (state.AddPlayer candidate)

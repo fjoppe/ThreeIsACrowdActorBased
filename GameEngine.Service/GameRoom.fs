@@ -95,8 +95,8 @@ module GameRoom =
         let levelData = FServiceIO.LoadLevel
         logger "loaded level data"
 
-        let gameData = Game.StartGame levelData gameId
-        logger "started game"
+        let gameData = Game.LoadGame levelData
+        logger "loaded game"
 
         // these are players who enter the game, we add the handler when the game wants to send a message to the player
         let gamePlayerList = 

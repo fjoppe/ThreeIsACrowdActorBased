@@ -21,67 +21,26 @@ type AI = {
 
         member private this.strategyList = [this.borderStrategy; this.gameOverStrategy; this.pointCountStrategy; this.killPlayerTurnStrategy]
 
-//        member private this.aithread = async {
-//            do! Async.Sleep(int(AI.random.NextDouble() * AI.maxTime * float(1000)))
-//            do this.Execute
-//        }
-
-
 
         // =====================    Private members      =====================
-//        member private this.Execute =
-//            try
-//                AI.logger.Debug("Execute AI procedure")
-//                use lock = FServiceIO.lockGame(this.GameId)
-//                let gameData = FServiceIO.LoadGameData(this.GameId)
-//                if gameData.IsSome then
-//                    let (playerId, choice) = this.DetermineChoice(gameData.Value)
-//                    let newGameData = gameData.Value.ChooseTurn(playerId, choice)
-//
-//                    AI.logger.Debug(String.Format("Next turn: {0}", newGameData.GetCurrentTurn()))
-//
-//                    if newGameData.CurrentTurnIsAI() then 
-//                        AI.logger.Debug("This player is AI: {0}", newGameData.GetCurrentTurn())
-//
-//                        FServiceIO.SaveGameData(this.GameId, newGameData)
-//                        this.aiStart()
-//                    else
-//                        let newGameDataHumanProcessing = { newGameData with AIProcessing = false}
-//                        FServiceIO.SaveGameData(this.GameId, newGameDataHumanProcessing )
-//                        AI.logger.Debug("End AI")
-//                else
-//                    AI.logger.Error("No game data available for {0}", this.GameId)
-//                    raise (Exception("No game data available"))
-//            with
-//                | e -> AI.logger.Error(e)
-//                       reraise()
-//            ()
 
 
         /// Determine choice to make
-        member private this.DetermineChoice(gameData : Game) = 
+        member this.DetermineChoice (gameData : Game) (player : Player) (possibleChoices : int list) = 
             AI.logger.Debug("DetermineChoice")
-            let playerColor = gameData.GetCurrentTurn()
-            AI.logger.Debug("DetermineChoice for {0}", playerColor)
-            let playerInfo = gameData.GetPlayerInfo(playerColor)
 
-            if playerInfo.IsSome then
-                let player = playerInfo.Value.Player
-                let possibleChoices = gameData.GetPossibleMoves(player)
+            let  playerColor = gameData.GetPlayerColor player
 
-                AI.logger.Debug("possible choices: {0}", possibleChoices.Length)
+            AI.logger.Debug("possible choices: {0}", possibleChoices.Length)
 
-                let valuedChoices = possibleChoices |> Seq.map(fun choice -> this.EvaluateStrategies gameData player choice)
-                let maxValue = valuedChoices |> Seq.map(fun choice -> choice.Value) |> Seq.max
-                let maxValuedChoices = Array.ofSeq(valuedChoices |> Seq.filter(fun elm -> elm.Value = maxValue))
+            let valuedChoices = possibleChoices |> Seq.map(fun choice -> this.EvaluateStrategies gameData player choice)
+            let maxValue = valuedChoices |> Seq.map(fun choice -> choice.Value) |> Seq.max
+            let maxValuedChoices = Array.ofSeq(valuedChoices |> Seq.filter(fun elm -> elm.Value = maxValue))
 
-                let choiceIndex = AI.random.Next(Array.length maxValuedChoices)
-                let choice = Array.get maxValuedChoices choiceIndex
-                AI.logger.Debug("DetermineChoice, choice for player {0} is: {1}", playerColor, choice.Choice)
-                (player, choice.Choice)
-            else
-                AI.logger.Error("playerColor appearantly does not have playerInfo {0}", playerColor)
-                raise (Exception("AI player does not exist, this should be an unreachable case"))
+            let choiceIndex = AI.random.Next(Array.length maxValuedChoices)
+            let choice = Array.get maxValuedChoices choiceIndex
+            AI.logger.Debug("DetermineChoice, choice for player {0} is: {1}", playerColor, choice.Choice)
+            (player, choice.Choice)
 
         
         /// Evaluate strategies per choice
@@ -124,7 +83,7 @@ type AI = {
             let neutralValue = { Choice = choice; Value = -1.0 }
             let lowValue = { Choice = choice; Value = -1.0 }
 
-            if afterChoiceGameData.Board.GameOver then
+            if afterChoiceGameData.GameOver then
                 let gameStats = afterChoiceGameData.GetGameStats()
                 let playerColor = sourceGameData.GetPlayerColor(player) // player color from initial situation
                 if didIWin playerColor gameStats then
@@ -157,8 +116,8 @@ type AI = {
         /// A choice which kills two player's turns, such that it is my turn again, is an excellent choice.
         member private this.killPlayerTurnStrategy(sourceGameData : Game, afterChoiceGameData : Game, player : Player, choice : int) : AIEvaluation =
             let whoIsAfterMe gameData = 
-                let newTurn = (gameData.Board.CurrentTurn + 1) % (List.length gameData.Board.TurnOrder)
-                gameData.Board.TurnOrder.[newTurn]
+                let newTurn = (gameData.CurrentTurn + 1) % (List.length gameData.TurnOrder)
+                gameData.TurnOrder.[newTurn]
             
             let currentPlayer = sourceGameData.GetCurrentTurn()
             let playerAfterMe = whoIsAfterMe sourceGameData

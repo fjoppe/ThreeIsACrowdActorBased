@@ -91,10 +91,10 @@ type FService() =
         FService.Execute(gameId, execute)
 
 
-    member this.WhatIsMyColor gameId playerId =
-        FService.logger.Debug("WhatIsMyColor")
-        let execute(gameData:Game) =
-            let result = gameData.WhatIsMyColor(playerId)
-            result
-        FService.Execute(gameId, execute)
+//    member this.WhatIsMyColor gameId playerId =
+//        FService.logger.Debug("WhatIsMyColor")
+//        let execute(gameData:Game) =
+//            let result = gameData.WhatIsMyColor(playerId)
+//            result
+//        FService.Execute(gameId, execute)
             

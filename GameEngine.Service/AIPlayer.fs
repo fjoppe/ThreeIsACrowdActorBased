@@ -27,13 +27,13 @@ module AIPlayer =
 
     /// Sends a message to the waiting room after a waiting period, and awaits the waiting room's response.
     /// If this response says that this actor is part of the game, the AI will play, otherwise it terminates.
-    let AIPlayerActor waitingRoom id gameId (mailbox:Actor<GameServiceConnectionMessage>) =
+    let AIPlayerActor waitingRoom playerId gameId (mailbox:Actor<GameServiceConnectionMessage>) =
         let logger = Logging.logDebug mailbox
         logger "Start AIPlayerActor"
         ActorSystem.Scheduler.ScheduleTellOnce(
             TimeSpan.FromSeconds(float(waitForAIToRegister)), 
             waitingRoom, 
-            AddAIPlayer(gameId, PlayerIdentity.Create id mailbox.Self Computer)
+            AddAIPlayer(gameId, PlayerIdentity.Create playerId mailbox.Self Computer)
         )
 
         let rec loop (state: AIState) = actor {
@@ -45,10 +45,29 @@ module AIPlayer =
                 match playerMessage with
                 | PlayerMessageResponse.YourId(id) ->  logger (sprintf "Your Id: %A" id)
                 | PlayerMessageResponse.YouAreRegisterd(ref) -> logger "Should not get this message: YouAreRegisterd"
-                | PlayerMessageResponse.GameStarted(color, board) -> logger (sprintf "Game started and color: %A" color)
+                | PlayerMessageResponse.GameStarted(color, board) -> 
+                    logger (sprintf "Game started and color: %A" color)
+                    let gameData = Game.LoadGame board
+                    let state = state.SetGameState (Some gameData)
+                    mailbox.UnstashAll()
+                    return! (loop state)
                 | PlayerMessageResponse.GameOver ->  logger "Game Over"
-                | PlayerMessageResponse.ItIsYourTurn(possibleMoves) -> logger (sprintf "It is your turn, possible: %A" possibleMoves)
-                | PlayerMessageResponse.BoardHasChanged(state) -> logger (sprintf "Board has changed...")
+                | PlayerMessageResponse.ItIsYourTurn(possibleMoves) -> 
+                    logger (sprintf "It is your turn, possible: %A" possibleMoves)
+                    match state.GameState with
+                    | Some (gameState) ->
+                        let ai = AI.Create gameId
+//                        ai.DetermineChoice (state.GameState) ()
+                        logger "TODO"
+                    | None -> mailbox.Stash()
+                | PlayerMessageResponse.BoardHasChanged(newState) -> 
+                    match state.GameState with
+                    | Some (gameState) ->
+                        logger (sprintf "Board has changed...")                        
+                        let gameData = gameState.ImportBoardState newState
+                        let state = state.SetGameState (Some gameData)
+                        return! (loop state)
+                    | None -> mailbox.Stash()
                 | PlayerMessageResponse.NoMoves -> logger "No possible moves"
                 | PlayerMessageResponse.Failed err ->  logger (sprintf "Failed: %s" err)
                 | PlayerMessageResponse.Nothing ->  logger "Nothing"
@@ -70,7 +89,8 @@ module AIPlayer =
 
     /// Create an AI player
     let CreateAIPlayerActor waitingRoom gameId = 
-        let id = Guid.NewGuid()
-        spawn ActorSystem (CreateName "AIPlayer" id) (AIPlayerActor waitingRoom id gameId)
-            
+        let playerId = Guid.NewGuid()
+        spawn ActorSystem (CreateName "AIPlayer" playerId) (AIPlayerActor waitingRoom playerId gameId)
+
+
 

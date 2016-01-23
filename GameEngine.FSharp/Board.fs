@@ -23,40 +23,6 @@ type Direction =
     | SouthEast
 
 
-/// Player information
-[<DataContract>]
-type PlayerInfo =
-    {
-        [<field: DataMember(Name="PlayerId") >]
-        Player      : Player;
-
-        [<field: DataMember(Name="Color") >]
-        Color       : TileType;
-
-        [<field: DataMember(Name="Fortresses") >]
-        Fortresses  : int;
-
-    }
-    with
-         //  member variables
-        static member private logger = LogManager.GetLogger("debug"); 
-
-       
-        //  =====================  Public Instance members          =====================
-
-        /// Consume fortress
-        member this.ConsumeFortress(consume) =
-            if consume then
-                if this.Fortresses = 0 then
-                        let message = String.Format("No more fortresses: {0}", this.Player)
-                        PlayerInfo.logger.Error(message)
-                        failwith message
-                else
-                    { this with Fortresses = this.Fortresses - 1 }
-            else
-                this
-
-
 ///<summary>
 /// The Board internal representation
 ///</summary>
@@ -66,20 +32,6 @@ type Board =
         [<field: DataMember(Name="TileList") >]
         TileList : Map<int, HexagonTile>
 
-        [<field: DataMember(Name="FortressesPerPlayer") >]
-        FortressesPerPlayer : int
-
-        [<field: DataMember(Name="Players") >]
-        Players : PlayerInfo list
-
-        [<field: DataMember(Name="CurrentTurn") >]
-        CurrentTurn : int
-
-        [<field: DataMember(Name="TurnOrder") >]
-        TurnOrder : TileType list
-
-        [<field: DataMember(Name="GameOver") >]
-        GameOver    : bool
     }
     with
         //  =====================  Private Statics          =====================
@@ -91,7 +43,7 @@ type Board =
         //  =====================  Private Instance members          =====================
 
         /// Retrieves list of all tiles
-        member private this.GetTileList() =
+        member this.GetTileList() =
             this.TileList
 
 
@@ -246,38 +198,6 @@ type Board =
             this.ApplyForAllDirections findTurnableTiles
 
 
-        member private this.ProcessPlayerInfo<'a> (player:'a) = function
-            | Some(found) -> found
-            | None        ->
-                    Board.logger.Error("Don't know this player: {0}", player);
-                    raise(Exception("Unknown player"))
-
-
-        /// Get player info by player
-        member private this.GetPlayerInfo(player : Player) =
-            let found = this.Players |> Seq.tryFind(fun elm -> elm.Player = player)
-            this.ProcessPlayerInfo player found
-
-        /// Get player info by playerId
-        member private this.GetPlayerInfo(playerId : Guid) =
-            let found = this.Players |> Seq.tryFind(fun elm -> elm.Player.IdentifiesWith playerId)
-            this.ProcessPlayerInfo playerId found
-
-        /// Get player info by player color
-        member private this.GetPlayerInfo(color:TileType) =
-            let found = this.Players |> Seq.tryFind(fun elm -> elm.Color = color)
-            this.ProcessPlayerInfo color found
-
-
-        ///     Get color for a new playerInfo, before it is added to the list
-        member private this.GetColor(currentPlayers : PlayerInfo list) =
-            match (List.length currentPlayers) with
-            |   0   ->  TileType.yellow
-            |   1   ->  TileType.blue
-            |   2   ->  TileType.red
-            |   _   ->  failwith "exceeds maximum index"
-
-
         ///<summary>
         ///     Retrieve all tiles which can be turned between choice and tiles with color tileType
         ///</summary>
@@ -291,14 +211,8 @@ type Board =
                 |> Seq.distinct     // remove duplicates
 
 
-        /// update player
-        member private this.UpdatePlayer(playerInfo) =
-            let newPlayers = playerInfo :: (this.Players |> List.filter(fun e -> e.Player <> playerInfo.Player))
-            { this with Players = newPlayers }
-
-
         /// Turn tiles
-        member private this.TurnTiles(color, id, fortress) =
+        member this.TurnTiles(color, id, fortress) =
             let choiceTile = this.GetTileById(id)
             let affectedTiles = this.FindTurnableTiles choiceTile color
             let colorCapture = if Seq.length(affectedTiles) > 0 then Seq.last(affectedTiles).TileType
@@ -315,61 +229,6 @@ type Board =
             
             let newBoard = {this with TileList    = newTileList;}
             (newBoard, colorCapture)
-
-
-        /// Update turn order if required
-        member private this.UpdateTurnOrder(colorCapture) = 
-            if (List.length this.TurnOrder) < 3 then
-                let newTurnOrder = 
-                    match colorCapture with
-                    |   TileType.red  -> [TileType.red; TileType.blue] |> List.append this.TurnOrder
-                    |   TileType.blue -> [TileType.blue;TileType.red]   |> List.append this.TurnOrder
-                    | _ -> failwith "impossible capture color"
-                { this with TurnOrder   = newTurnOrder; }
-            else
-                this
-
-
-        /// Retrieves next current turn
-        member private this.GetNextCurrentTurn() =
-            let currentTurn = this.CurrentTurn + 1
-            if currentTurn = 3 then
-                { this with CurrentTurn = 0 }
-            else 
-                { this with CurrentTurn = currentTurn }
-
-
-        /// Initialize next turn
-        member private this.InitNextTurn() =
-            let rec initNextTurnRec(instance:Board, skips) = 
-                let nextTurn = instance.GetNextCurrentTurn()
-                let possibilities = nextTurn.FindChoiceCandidates(nextTurn.GetCurrentTurn())
-                if Seq.isEmpty possibilities then 
-                    let nextTurnColor = nextTurn.GetCurrentTurn()
-                    let skipPlayer = nextTurn.GetPlayerInfo(nextTurnColor).Player
-                    Player.SendMessage skipPlayer PlayerStatus.NoMoves
-                    if skips < 3 then
-                        initNextTurnRec(nextTurn, skips+1)
-                    else
-                        nextTurn.Players |> List.iter(fun elm -> Player.SendMessage elm.Player PlayerStatus.GameOver) 
-                else
-                    nextTurn.SetTurn()
-            initNextTurnRec(this, 0)
-
-
-        /// Set the current turn
-        member this.SetTurn() = 
-            let color = this.GetCurrentTurn()
-            let currentPlayer =  this.GetPlayerInfo(color)
-            Player.SendMessage (currentPlayer.Player) (PlayerStatus.ItsMyTurn(this.FindChoiceCandidates(color) |> Seq.toList))
-
-
-        /// Turns tiles for the specified move
-        member private this.InvokePlayerMove(color, id, fortress) =
-            let (newBoard, colorCapture) = this.TurnTiles(color, id, fortress)
-            let newBoard = newBoard.UpdateTurnOrder(colorCapture)
-            let newBoard = newBoard.UpdatePlayer(this.GetPlayerInfo(color).ConsumeFortress(fortress))
-            newBoard
 
 
         //  =====================           Public Instance members          =====================
@@ -399,10 +258,7 @@ type Board =
             let ConvertHexagonTileToSerializable(elm : HexagonTile) : HexagonTileSerializable =
                 {Id = elm.Id; X=elm.X; Y=elm.Y; TileType=elm.TileType; TileValue=elm.TileValue; Fortress=elm.Fortress}
             let convertedList = this.GetTileList() |> Map.Values |> Seq.map(fun elm -> ConvertHexagonTileToSerializable(elm))
-            {
-                FortressesPerPlayer = this.FortressesPerPlayer
-                ActiveTileList = Seq.toArray convertedList
-            }
+            Seq.toArray convertedList
 
 
         ///<summary>
@@ -415,114 +271,6 @@ type Board =
             let ConvertHexagonTileToTileColor(elm : HexagonTile) : TileColor =
                 { Id = elm.Id; TileType = elm.TileType; Fortress = elm.Fortress }
             this.GetTileList() |> Map.Values |> Seq.map (fun elm -> ConvertHexagonTileToTileColor(elm)) |> Seq.toList
-        
-        
-        ///<summary>
-        ///     Retrieve Board statistics
-        ///</summary>
-        /// <returns>
-        ///     A BoardStats Record containing current board statistics.
-        ///</returns>
-        member this.GetStatistics() =
-            let fortressCount color =  this.Players |> List.find(fun elm -> elm.Color = color) |> fun e -> e.Fortresses
-            let countColor color = this.GetTileList() |> Map.Values |> Seq.filter(fun elm -> elm.TileType = color) |> Seq.length;
-            {
-                RedCount        = countColor TileType.red;
-                BlueCount       = countColor TileType.blue;
-                YellowCount     = countColor TileType.yellow;
-                YellowFortress  = fortressCount TileType.yellow; 
-                BlueFortress    = fortressCount TileType.blue;
-                RedFortress     = fortressCount TileType.red;
-            }
-
-
-        member this.NotifyPlayersBoardHasChanged() =
-            this.Players |> List.iter
-                (fun p -> 
-                    let boardState = this.GetBoardState()
-                    Player.SendMessage p.Player (PlayerStatus.BoardHasChanged(boardState))
-                )
-
-
-        ///     Choose turn for player
-        member this.ChooseTurn(color, id, fortress) = 
-            let newBoard = this.InvokePlayerMove(color, id, fortress)
-            newBoard.NotifyPlayersBoardHasChanged()
-            newBoard.InitNextTurn()
-            newBoard
-
-
-        ///     Register a player
-        member this.RegisterPlayer(player:Player, fortressesPerPlayer) =
-            let playersNew = this.Players
-            let newPlayer = 
-                {
-                    Player      = player; 
-                    Color       = this.GetColor(playersNew);
-                    Fortresses  = fortressesPerPlayer; 
-                }
-            let playersNew = List.append playersNew [newPlayer]
-            { this with Players = playersNew; }
-
-
-        ///<summary>
-        ///     Retrieve color of the player, when available
-        ///</summary>
-        /// <returns>
-        ///     When available, the player color
-        ///     When unavailable the color "none"
-        ///</returns>
-        member this.GetPlayerColor(player:Player) =
-            if List.isEmpty this.Players then TileType.none
-            else
-                this.GetPlayerInfo(player).Color
-
-        member this.GetPlayerColor(playerId:Guid) =
-            if List.isEmpty this.Players then TileType.none
-            else
-                this.GetPlayerInfo(playerId).Color
-
-
-        /// Retrieve Player information by Tile Color
-        member this.GetPlayerInformation(tileColor:TileType) =
-            if List.isEmpty this.Players then Option.None
-            else
-                Option.Some(this.GetPlayerInfo(tileColor))
-
-
-        /// Retrieve Player information by Tile Color
-        member this.GetPlayerInformation(player : Player) =
-            if List.isEmpty this.Players then Option.None
-            else
-                Option.Some(this.GetPlayerInfo(player))
-
-
-        ///<summary>
-        ///     Queries whether the player still has fortresses left
-        ///</summary>
-        /// <returns>
-        ///     true    -> the player still has fortresses left
-        ///     false   -> the player has no fortresses left
-        ///</returns>
-        member this.HasFortresses(player:Player) =
-            this.GetPlayerInfo(player).Fortresses > 0
-
-
-        /// Gets the color for the current turn
-        member this.GetCurrentTurn() : TileType = 
-            if not this.GameOver then
-                this.TurnOrder.[this.CurrentTurn]
-            else
-                TileType.none
-
-
-        //  TODO: REMOVE
-        /// Clone board instance
-        member this.Clone() =
-            let clonedTileList = this.TileList               // no side effects because containing object are immutable
-            let clonedPlayers = this.Players
-            let clonedTurnOrder = this.TurnOrder
-            {this with TileList = clonedTileList; Players = clonedPlayers; TurnOrder = clonedTurnOrder }
 
 
         /// Retrieve a tile's neighbours
@@ -533,11 +281,19 @@ type Board =
             |> Seq.map(fun id -> this.GetTileById(id.Value))
 
 
-        /// Send Game started to all players
-        member this.InformGameStartedToPlayers() =
-            this.Players |> List.iter(fun p -> 
-                Player.SendMessage (p.Player) (PlayerStatus.GameStarted(p.Color))
-                )
+        /// Import a new state into the board
+        member this.ImportBoardState (newState : TileColor list) =
+            let tileList = 
+                newState
+                |> List.fold(
+                    fun (state:Map<int, HexagonTile>) elm -> 
+                        let oldElm = state.[elm.Id]
+                        let newElm = {oldElm with TileType = elm.TileType; Fortress = elm.Fortress}
+                        let state = state.Remove elm.Id
+                        let state = state.Add(elm.Id, newElm)
+                        state
+                    ) this.TileList
+            {this with TileList = tileList}
 
 
         //  =====================           Static members            =====================
@@ -555,11 +311,6 @@ type Board =
             let dictionary = hexagonList |> Seq.fold(fun (m:Map<int, HexagonTile>) elm -> m.Add(elm.Id, elm)) Map.empty<int, HexagonTile>
 
             {
-                FortressesPerPlayer = board.FortressesPerPlayer;
                 TileList            = dictionary;
-                Players             = List.empty<PlayerInfo>;
-                CurrentTurn         = 0;
-                TurnOrder           = [TileType.yellow];   //  has the first move
-                GameOver            = false;
             }
 

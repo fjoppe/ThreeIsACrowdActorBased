@@ -8,6 +8,8 @@ How to Build and Run (version 2016-01-24)
 4. In project "GameEngine.Service", edit the App.config and change the settings for:
   * nlog/logdirectory
   * appSettings/levelData (this should point to the folder "GameLevelData" found in the zip
+5. Build everything
+
 
 Running it:
 
@@ -15,7 +17,7 @@ Running it:
 2. Open the logfile you configured in App.Config, in your editor (you can monitor activity)
 3. Run the service, "GameEngine.Service"
 
-When the service is ready with initialization (see logfile, or command window), you can run the lines from the beginning of the "CallRemoteActor.fsx" until (and including) this line:
+When the service is ready with initialization (see logfile, or command window), you can run the lines from the beginning of  "CallRemoteActor.fsx" until (and including) this line:
 ```fsharp
 registerPlayer <! GameEngine.Common.RegisterMe(ActorRefs.untyped(playerReceiver))
 ```

@@ -13,3 +13,5 @@ This system is to be build with Akka.Net, Akkling and Wire.
 
 Goal of this project is not only to implement a waiting room system. Another goal is to experiment with
 design patterns, in order to learn more about Akka.Net.
+
+Please refer to "BuildAndRun.md" for build and run instructions.

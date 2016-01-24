@@ -10,6 +10,7 @@ How to Build and Run (version 2016-01-24)
   * appSettings/levelData (this should point to the folder "GameLevelData" found in the zip
 
 Running it:
+
 1. Open "CallRemoteActor.fsx" in project "GameEngine.Service", in your editor
 2. Open the logfile you configured in App.Config, in your editor (you can monitor activity)
 3. Run the service, "GameEngine.Service"

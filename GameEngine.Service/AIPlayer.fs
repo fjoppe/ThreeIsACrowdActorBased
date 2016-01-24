@@ -17,12 +17,14 @@ module AIPlayer =
 
     type AIState = {
         GameState  : Game option
+        Player     : Guid
         Connection : IActorRef<DynamicConnection> option
     }
     with
         member this.SetGameState state = {this with GameState = state }
         member this.SetConnection conn = {this with Connection= conn }
-        static member Create() = { GameState = None; Connection = None}
+        member this.SetPlayer p = { this with Player = p }
+        static member Create() = { GameState = None; Player = Guid.NewGuid(); Connection = None}
 
 
     /// Sends a message to the waiting room after a waiting period, and awaits the waiting room's response.
@@ -48,26 +50,47 @@ module AIPlayer =
                 | PlayerMessageResponse.GameStarted(color, board) -> 
                     logger (sprintf "Game started and color: %A" color)
                     let gameData = Game.LoadGame board
+
+                    //  just add 3 guid's / players to the game, later we will identify them via their colors.
+                    let gameData = 
+                        [0..2] 
+                        |> List.fold(
+                            fun (gd:Game) e -> 
+                                let sendMessageToPlayerFunc m  = ()
+                                let player = GameEngine.FSharp.Player.Create (Guid.NewGuid()) sendMessageToPlayerFunc
+                                gd.JoinGame player 
+                        ) gameData
+
+                    let player = gameData.GetPlayerInfo(color)
                     let state = state.SetGameState (Some gameData)
+                    let state = state.SetPlayer(player.Player.GetId())
+
                     mailbox.UnstashAll()
                     return! (loop state)
                 | PlayerMessageResponse.GameOver ->  logger "Game Over"
+                | PlayerMessageResponse.PlayerMadeChoice(c,i,f) ->
+                    // via this match-case, the AI plays the game parallel to the original. Even its own moves are processed here.
+                    logger "Player made choice"
+                    match state.GameState with
+                    | Some (gameState) ->
+                        let player = gameState.GetPlayerInfo(c).Player
+                        let newState = gameState.ChooseTurn(player, i, f)
+                        return! (loop (state.SetGameState(Some newState)))
+                    | None -> mailbox.Stash()
                 | PlayerMessageResponse.ItIsYourTurn(possibleMoves) -> 
                     logger (sprintf "It is your turn, possible: %A" possibleMoves)
                     match state.GameState with
                     | Some (gameState) ->
                         let ai = AI.Create gameId
-//                        ai.DetermineChoice (state.GameState) ()
-                        logger "TODO"
+                        let choice = ai.DetermineChoice gameState (state.Player) possibleMoves
+                        logger (sprintf "choice : %d" choice)
+                        match state.Connection with
+                        | Some(conn) -> conn <! Data(Choice(choice))
+                        | None       -> logger "ERROR: this is very bad, made a choice but cannot send it"
                     | None -> mailbox.Stash()
                 | PlayerMessageResponse.BoardHasChanged(newState) -> 
-                    match state.GameState with
-                    | Some (gameState) ->
-                        logger (sprintf "Board has changed...")                        
-                        let gameData = gameState.ImportBoardState newState
-                        let state = state.SetGameState (Some gameData)
-                        return! (loop state)
-                    | None -> mailbox.Stash()
+                    logger (sprintf "Board has changed...")                        
+                    return! (loop state)
                 | PlayerMessageResponse.NoMoves -> logger "No possible moves"
                 | PlayerMessageResponse.Failed err ->  logger (sprintf "Failed: %s" err)
                 | PlayerMessageResponse.Nothing ->  logger "Nothing"

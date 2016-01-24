@@ -65,6 +65,7 @@ module GameRoom =
             | PlayerStatus.NoMoves            -> PlayerMessageResponse.NoMoves
             | PlayerStatus.GameOver           -> PlayerMessageResponse.GameOver
             | PlayerStatus.GameStarted(x)     -> PlayerMessageResponse.GameStarted(x, (gameData.RetrieveBoardData()))
+            | PlayerStatus.PlayerMadeChoice(c,i,f) -> PlayerMessageResponse.PlayerMadeChoice(c,i,f)
             | PlayerStatus.BoardHasChanged(x) -> PlayerMessageResponse.BoardHasChanged(x)
             | _         -> failwith "Unrecognized message"
         playerIdentity.Ref <! ToPlayer(messageToSend)

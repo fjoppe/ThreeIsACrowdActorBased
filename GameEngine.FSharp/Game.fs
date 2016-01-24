@@ -122,6 +122,7 @@ type Game =
             let playersNew = List.append playersNew [newPlayer]
             { this with Players = playersNew; }
 
+
         /// Update turn order if required
         member private this.UpdateTurnOrder(colorCapture) = 
             if (List.length this.TurnOrder) < 3 then
@@ -133,6 +134,7 @@ type Game =
                 { this with TurnOrder   = newTurnOrder; }
             else
                 this
+
 
         /// Retrieve color of the player for the current turn
         member this.GetCurrentTurn() =
@@ -149,7 +151,7 @@ type Game =
             let candidates = this.Board.FindChoiceCandidates(playerColor)
             Seq.toList candidates
 
-
+        /// Sends BoardHasChanged message to all players
         member this.NotifyPlayersBoardHasChanged() =
             this.Players |> List.iter
                 (fun p -> 
@@ -157,6 +159,7 @@ type Game =
                     Player.SendMessage p.Player (PlayerStatus.BoardHasChanged(boardState))
                 )
 
+        /// Retrieve the turn that is next
         member private this.GetNextCurrentTurn() =
             let currentTurn = this.CurrentTurn + 1
             if currentTurn = 3 then
@@ -165,6 +168,7 @@ type Game =
                 { this with CurrentTurn = currentTurn }
 
 
+        /// Initialize the next turn
         member private this.InitNextTurn() =
             let rec initNextTurnRec(instance:Game, skips) = 
                 let nextTurn = instance.GetNextCurrentTurn()
@@ -177,11 +181,14 @@ type Game =
                         initNextTurnRec(nextTurn, skips+1)
                     else
                         nextTurn.Players |> List.iter(fun elm -> Player.SendMessage elm.Player PlayerStatus.GameOver) 
+                        nextTurn
                 else
                     nextTurn.SetTurn()
+                    nextTurn
             initNextTurnRec(this, 0)
 
 
+        /// Invoke player move, turn tiles, consume fortress if necesary
         member private this.InvokePlayerMove(color, id, fortress) =
             let (newBoard, colorCapture) = this.Board.TurnTiles(color, id, fortress)
             let newGame = this.UpdateTurnOrder(colorCapture)
@@ -189,10 +196,12 @@ type Game =
             { newGame with Board = newBoard }
 
 
+        /// Generic make choice, realises player's choice
         member private this.MakeChoice playerColor id fortress =
+            this.Players |> List.iter(fun p -> Player.SendMessage (p.Player) (PlayerStatus.PlayerMadeChoice(playerColor, id, fortress)))
             let newGame = this.InvokePlayerMove(playerColor, id, fortress)
             newGame.NotifyPlayersBoardHasChanged()
-            newGame.InitNextTurn()
+            let newGame = newGame.InitNextTurn()
             newGame
 
 
@@ -235,18 +244,20 @@ type Game =
             }
 
 
-        /// Get the player's color
+        /// Retrieve the player's color by Player
         member this.GetPlayerColor(player:Player) =
             if List.isEmpty this.Players then TileType.none
             else
                 this.GetPlayerInfo(player).Color
 
+        /// Retrieve the player's color by Guid
         member this.GetPlayerColor(playerId:Guid) =
             if List.isEmpty this.Players then TileType.none
             else
                 this.GetPlayerInfo(playerId).Color
 
 
+        /// Generic GetPlayerInfo processor
         member private this.ProcessPlayerInfo<'a> (player:'a) = function
             | Some(found) -> found
             | None        ->
@@ -254,21 +265,22 @@ type Game =
                     raise(Exception("Unknown player"))
 
         /// Get player info by player
-        member private this.GetPlayerInfo(player : Player) =
+        member this.GetPlayerInfo(player : Player) =
             let found = this.Players |> Seq.tryFind(fun elm -> elm.Player = player)
             this.ProcessPlayerInfo player found
 
         /// Get player info by playerId
-        member private this.GetPlayerInfo(playerId : Guid) =
+        member this.GetPlayerInfo(playerId : Guid) =
             let found = this.Players |> Seq.tryFind(fun elm -> elm.Player.IdentifiesWith playerId)
             this.ProcessPlayerInfo playerId found
 
         /// Get player info by player color
-        member private this.GetPlayerInfo(color:TileType) =
+        member this.GetPlayerInfo(color:TileType) =
             let found = this.Players |> Seq.tryFind(fun elm -> elm.Color = color)
             this.ProcessPlayerInfo color found
 
-        /// update player
+
+        /// Update player
         member private this.UpdatePlayer(playerInfo) =
             let newPlayers = playerInfo :: (this.Players |> List.filter(fun e -> e.Player <> playerInfo.Player))
             { this with Players = newPlayers }
@@ -276,21 +288,12 @@ type Game =
 
         /// Inform all players that the game has started
         member this.InformGameStartedToPlayers() =
-            this.Players |> List.iter(fun p -> 
-                Player.SendMessage (p.Player) (PlayerStatus.GameStarted(p.Color))
-                )
+            this.Players |> List.iter(fun p -> Player.SendMessage (p.Player) (PlayerStatus.GameStarted(p.Color)))
             this
 
+        /// Send "It is your turn" to the player who has the current move
         member this.SetTurn() =
             let color = this.GetCurrentTurn()
             let currentPlayer =  this.GetPlayerInfo(color)
             Player.SendMessage (currentPlayer.Player) (PlayerStatus.ItsMyTurn(this.Board.FindChoiceCandidates(color) |> Seq.toList))
 
-
-        member this.ImportBoardState (newState : TileColor list) =
-            {this with Board = this.Board.ImportBoardState newState}
-
-
-        ///     Queries whether the player still has fortresses left
-        member this.HasFortresses(player:Player) =
-            this.GetPlayerInfo(player).Fortresses > 0

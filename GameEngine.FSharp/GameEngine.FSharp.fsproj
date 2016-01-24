@@ -62,10 +62,7 @@
     <Compile Include="Game.fs" />
     <Compile Include="FServiceIO.fs" />
     <Compile Include="AI.fs" />
-    <Compile Include="FService.svc.fs" />
     <Content Include="packages.config" />
-    <Content Include="App.config" />
-    <None Include="FailFast.fsx" />
   </ItemGroup>
   <ItemGroup>
     <Reference Include="FSharp.Core, Version=$(TargetFSharpCoreVersion), Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a">
@@ -81,8 +78,6 @@
     <Reference Include="System.Core" />
     <Reference Include="System.Numerics" />
     <Reference Include="System.Runtime.Serialization" />
-    <Reference Include="System.ServiceModel" />
-    <Reference Include="System.Web" />
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>

@@ -18,6 +18,7 @@ type PlayerMessageResponse =
     | GameStarted of TileType * BoardSerializable
     | BoardHasChanged of TileColor list
     | ItIsYourTurn of int list
+    | PlayerMadeChoice of TileType * int * bool
     | NoMoves
     | GameOver
     | Failed of String

@@ -26,7 +26,7 @@ type AI = {
 
 
         /// Determine choice to make
-        member this.DetermineChoice (gameData : Game) (player : Player) (possibleChoices : int list) = 
+        member this.DetermineChoice (gameData : Game) (player : Guid) (possibleChoices : int list) = 
             AI.logger.Debug("DetermineChoice")
 
             let  playerColor = gameData.GetPlayerColor player
@@ -40,7 +40,7 @@ type AI = {
             let choiceIndex = AI.random.Next(Array.length maxValuedChoices)
             let choice = Array.get maxValuedChoices choiceIndex
             AI.logger.Debug("DetermineChoice, choice for player {0} is: {1}", playerColor, choice.Choice)
-            (player, choice.Choice)
+            choice.Choice
 
         
         /// Evaluate strategies per choice
@@ -59,7 +59,7 @@ type AI = {
         // =====================    AI non-fortress strategies to be checked for each possible move      =====================
 
         /// Border strategy, a tile at the board border is a better choice than a tile in the middle of the board
-        member private this.borderStrategy(sourceGameData : Game, afterChoiceGameData : Game, player : Player, choice : int) : AIEvaluation =
+        member private this.borderStrategy(sourceGameData : Game, afterChoiceGameData : Game, player : Guid, choice : int) : AIEvaluation =
             let neighbourCount(gameData : Game, tile) =
                 let eval = gameData.Board.TileList.[tile]
                 eval.NeighbourCount
@@ -68,7 +68,7 @@ type AI = {
 
 
         /// Game over strategy, if the choice invokes game over and I won the game, it is a good choice
-        member private this.gameOverStrategy(sourceGameData : Game, afterChoiceGameData : Game, player : Player, choice : int) : AIEvaluation =
+        member private this.gameOverStrategy(sourceGameData : Game, afterChoiceGameData : Game, player : Guid, choice : int) : AIEvaluation =
             let didIWin playerColor gameStats = 
                 match playerColor with
                     |   TileType.yellow ->  gameStats.YellowCount > gameStats.BlueCount && 
@@ -95,7 +95,7 @@ type AI = {
 
 
         /// Point count strategy, a choice that wins more points is better than a a choice which wins lesser points
-        member private this.pointCountStrategy(sourceGameData : Game,  afterChoiceGameData : Game, player : Player, choice : int) : AIEvaluation =
+        member private this.pointCountStrategy(sourceGameData : Game,  afterChoiceGameData : Game, player : Guid, choice : int) : AIEvaluation =
             let countPoints gameData playerColor =
                 gameData.Board.TileList
                     |> Map.toSeq
@@ -114,7 +114,7 @@ type AI = {
 
         /// Kill player turn strategy, a choice that kills the turn of the next subsequent player is better than a choice which doesn't kill a player's turn.
         /// A choice which kills two player's turns, such that it is my turn again, is an excellent choice.
-        member private this.killPlayerTurnStrategy(sourceGameData : Game, afterChoiceGameData : Game, player : Player, choice : int) : AIEvaluation =
+        member private this.killPlayerTurnStrategy(sourceGameData : Game, afterChoiceGameData : Game, player : Guid, choice : int) : AIEvaluation =
             let whoIsAfterMe gameData = 
                 let newTurn = (gameData.CurrentTurn + 1) % (List.length gameData.TurnOrder)
                 gameData.TurnOrder.[newTurn]

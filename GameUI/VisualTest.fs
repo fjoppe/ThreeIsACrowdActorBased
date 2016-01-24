@@ -2,7 +2,6 @@
 
 open System
 open Akka
-open Akka.FSharp
 open WebSharper
 open WebSharper.JavaScript
 open WebSharper.UI.Next
@@ -11,39 +10,15 @@ open WebSharper.UI.Next.Html
 open WebSharper.Jatek
 open GameEngine.Common
 
+open Akkling
+
 module VisualTest=
-
-    let configuration = Configuration.ConfigurationFactory.ParseString(@"
-        akka {
-            actor {
-                provider = ""Akka.Remote.RemoteActorRefProvider, Akka.Remote""
-            }
-            remote {
-                helios.tcp {
-                    port = 8090
-                    hostname = localhost
-                }
-            }
-        }
-        ")
-
-    let ActorSystem = System.create "game-client" (configuration)
-
-    let RegisterPlayer = ActorSystem.ActorSelection("akka.tcp://three-is-a-crowd@localhost:8080/user/RegisterPlayer")
-
-    let PlayerActor = 
-        async {
-            return! RegisterPlayer <? RegisterMe
-        } |> Async.RunSynchronously :> Actor.IActorRef
-
 
     module Server=
 
         [<Remote>]
-        let RegisterUser() = 
-            async {
-                let! id = PlayerActor <? WhatIsMyId
-                return unbox<string>(id)
+        let RegisterUser() = async {
+                GameEngineConnection.playerSender <! WhatIsMyId
             }
 
     [<JavaScript>]
@@ -52,9 +27,7 @@ module VisualTest=
 
         let GetPlayerId() = 
             async {
-                let! result = Server.RegisterUser()
-                playerGuid.Value <- result
-                return ()
+                do! Server.RegisterUser()
             }
             |> Async.Start
 

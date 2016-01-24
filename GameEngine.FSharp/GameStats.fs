@@ -6,5 +6,5 @@ type GameStats = {
         YellowCount     : int ;
         RedFortress     : int ;
         BlueFortress    : int; 
-        YellowFortress : int;
+        YellowFortress  : int;
     }

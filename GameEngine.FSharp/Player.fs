@@ -8,6 +8,7 @@ type PlayerStatus =
     | NoStatus      
     | ItsMyTurn of int list
     | TriggerAI 
+    | PlayerMadeChoice of TileType * int * bool
     | NoMoves   
     | GameOver  
     | GameStarted of TileType
@@ -21,6 +22,7 @@ type Player = {
     }    
     with
         member this.IdentifiesWith i = this.Id = i
+        member this.GetId() = this.Id
         override x.Equals(yobj) =
             match yobj with
             | :? Player as y -> (x.Id = y.Id)

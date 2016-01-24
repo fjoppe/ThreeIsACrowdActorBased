@@ -281,21 +281,6 @@ type Board =
             |> Seq.map(fun id -> this.GetTileById(id.Value))
 
 
-        /// Import a new state into the board
-        member this.ImportBoardState (newState : TileColor list) =
-            let tileList = 
-                newState
-                |> List.fold(
-                    fun (state:Map<int, HexagonTile>) elm -> 
-                        let oldElm = state.[elm.Id]
-                        let newElm = {oldElm with TileType = elm.TileType; Fortress = elm.Fortress}
-                        let state = state.Remove elm.Id
-                        let state = state.Add(elm.Id, newElm)
-                        state
-                    ) this.TileList
-            {this with TileList = tileList}
-
-
         //  =====================           Static members            =====================
 
 

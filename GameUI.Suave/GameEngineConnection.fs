@@ -1,4 +1,4 @@
-﻿namespace TrafficSim
+﻿namespace GameUI.Suave.ThreeIsACrowd
 
 open Akka
 open Akkling

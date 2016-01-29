@@ -1,4 +1,4 @@
-﻿namespace TrafficSim
+﻿namespace GameUI.Suave.ThreeIsACrowd
 
 open System
 open Akka
@@ -32,7 +32,7 @@ module VisualTest=
             |> Async.Start
 
         let Main() =
-            let block = Visual.Create "App_Themes/Standard/BlueHexagon.png" 50 50 60 52
+            let block = Visual.Create "/App_Themes/Standard/BlueHexagon.png" 50 50 60 52
 
             let scene = Scene.Create([block])
 
@@ -44,6 +44,6 @@ module VisualTest=
 
             div [
                 Doc.Input [] playerGuid
-//                game.Visual
+                game.Visual
             ]
         

@@ -1,4 +1,4 @@
-namespace GameUI.Suave
+namespace GameUI.Suave.ThreeIsACrowd
 
 open WebSharper
 open WebSharper.JavaScript

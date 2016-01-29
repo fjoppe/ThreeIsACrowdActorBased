@@ -41,16 +41,34 @@
     <Compile Include="Client.fs" />
     <Compile Include="Main.fs" />
     <Content Include="Main.html" />
+    <None Include="App_Themes\Standard\BlueHexagon.svg" />
+    <None Include="App_Themes\Standard\Fortress.svg" />
+    <None Include="App_Themes\Standard\Hexagon.svg" />
+    <None Include="App_Themes\Standard\HexagonPossible.png" />
+    <None Include="App_Themes\Standard\HexagonPossible.svg" />
+    <None Include="App_Themes\Standard\RedHexagon.svg" />
+    <None Include="App_Themes\Standard\YellowHexagon.svg" />
     <None Include="Setup.fsx" />
     <None Include="App.config" />
     <Content Include="akka.config" />
     <Content Include="packages.config" />
-    <None Include="App_Themes\Standard\BlueHexagon.png" />
-    <None Include="App_Themes\Standard\Fortress.png" />
-    <None Include="App_Themes\Standard\Hexagon.png" />
-    <None Include="App_Themes\Standard\RedHexagon.png" />
-    <None Include="App_Themes\Standard\YellowHexagon.png" />
+    <None Include="App_Themes\Standard\BlueHexagon.png">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <None Include="App_Themes\Standard\Fortress.png">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <None Include="App_Themes\Standard\Hexagon.png">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <None Include="App_Themes\Standard\RedHexagon.png">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <None Include="App_Themes\Standard\YellowHexagon.png">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
     <None Include="TryOut.fsx" />
+    <None Include="PlayWithSuave.fsx" />
   </ItemGroup>
   <Target Name="IncludeContent" BeforeTargets="Compile">
     <ItemGroup>

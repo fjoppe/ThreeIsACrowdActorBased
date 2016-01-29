@@ -1,6 +1,6 @@
-namespace GameUI.Suave
+namespace GameUI.Suave.ThreeIsACrowd
 
-open WebSharper
+open System.IO
 open WebSharper.Sitelets
 open WebSharper.UI.Next
 open WebSharper.UI.Next.Server
@@ -40,7 +40,7 @@ module Site =
     let HomePage ctx =
         Templating.Main ctx EndPoint.Home "Home" [
             h1 [text "Say Hi to the server!"]
-            div [client <@ Client.Main() @>]
+            div [client <@ VisualTest.Client.Main() @>]
         ]
 
     let AboutPage ctx =
@@ -50,13 +50,30 @@ module Site =
         ]
 
     let Main =
-        Application.MultiPage (fun ctx endpoint ->
+        WebSharper.Application.MultiPage (fun ctx endpoint ->
             match endpoint with
             | EndPoint.Home -> HomePage ctx
             | EndPoint.About -> AboutPage ctx
         )
 
-    open WebSharper.Suave
+    open Suave
+    open Suave.Filters
+    open Suave.Operators
+    open Suave.Successful
+    open System.IO
     open Suave.Web
 
-    do startWebServer defaultConfig (WebSharperAdapter.ToWebPart Main)
+    do 
+        let myHomeFolder = Path.Combine(System.Environment.CurrentDirectory) 
+        printf "%s" myHomeFolder 
+
+        let cfg = {  defaultConfig with homeFolder = Some(myHomeFolder)}
+
+        let routing = 
+            choose [
+                path "/App_Themes" >=> OK "test" ; Files.browseHome
+                (WebSharper.Suave.WebSharperAdapter.ToWebPart Main)
+                RequestErrors.NOT_FOUND "Page not found."
+            ]
+
+        startWebServer cfg routing // (WebSharperAdapter.ToWebPart Main)

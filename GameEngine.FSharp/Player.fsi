@@ -4,13 +4,11 @@ open System
 open GameEngine.Common
 
 type PlayerStatus =
-    | NoStatus      
-    | ItsMyTurn of int list
-    | TriggerAI 
+    | ItIsYourTurn of int list
     | PlayerMadeChoice of TileType * int * bool
     | NoMoves   
     | GameOver  
-    | GameStarted of TileType
+    | GameStarted of TileType * BoardSerializable
     | BoardHasChanged of TileColor list
 
 [<Sealed>]

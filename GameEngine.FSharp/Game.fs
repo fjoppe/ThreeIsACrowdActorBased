@@ -288,12 +288,12 @@ type Game =
 
         /// Inform all players that the game has started
         member this.InformGameStartedToPlayers() =
-            this.Players |> List.iter(fun p -> Player.SendMessage (p.Player) (PlayerStatus.GameStarted(p.Color)))
+            this.Players |> List.iter(fun p -> Player.SendMessage (p.Player) (PlayerStatus.GameStarted(p.Color, this.RetrieveBoardData())))
             this
 
         /// Send "It is your turn" to the player who has the current move
         member this.SetTurn() =
             let color = this.GetCurrentTurn()
             let currentPlayer =  this.GetPlayerInfo(color)
-            Player.SendMessage (currentPlayer.Player) (PlayerStatus.ItsMyTurn(this.Board.FindChoiceCandidates(color) |> Seq.toList))
+            Player.SendMessage (currentPlayer.Player) (PlayerStatus.ItIsYourTurn(this.Board.FindChoiceCandidates(color) |> Seq.toList))
 

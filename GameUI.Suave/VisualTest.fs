@@ -13,23 +13,23 @@ open GameEngine.Common
 open Akkling
 
 module VisualTest=
-
-    module Server=
-
-        [<Remote>]
-        let RegisterUser() = async {
-                GameEngineConnection.playerSender <! WhatIsMyId
-            }
+//
+//    module Server=
+//
+//        [<Remote>]
+//        let RegisterUser() = async {
+//                GameEngineConnection.playerSender <! WhatIsMyId
+//            }
 
     [<JavaScript>]
     module Client =
         let playerGuid = Var.Create ""
 
-        let GetPlayerId() = 
-            async {
-                do! Server.RegisterUser()
-            }
-            |> Async.Start
+//        let GetPlayerId() = 
+//            async {
+//                do! Server.RegisterUser()
+//            }
+//            |> Async.Start
 
         let Main() =
             let block = Visual.Create "/App_Themes/Standard/BlueHexagon.png" 50 50 60 52
@@ -40,7 +40,7 @@ module VisualTest=
 
             let game = Game.Create 400 400 (fun p -> Console.Log "test") allScenes 1
 
-            GetPlayerId()
+//            GetPlayerId()
 
             div [
                 Doc.Input [] playerGuid

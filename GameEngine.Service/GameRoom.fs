@@ -61,10 +61,10 @@ module GameRoom =
     let SendMessageToPlayer (gameData:Game) playerIdentity (message:PlayerStatus) =
         let messageToSend = 
             match message with
-            | PlayerStatus.ItsMyTurn(x)       -> PlayerMessageResponse.ItIsYourTurn(x)
+            | PlayerStatus.ItIsYourTurn(x)    -> PlayerMessageResponse.ItIsYourTurn(x)
             | PlayerStatus.NoMoves            -> PlayerMessageResponse.NoMoves
             | PlayerStatus.GameOver           -> PlayerMessageResponse.GameOver
-            | PlayerStatus.GameStarted(x)     -> PlayerMessageResponse.GameStarted(x, (gameData.RetrieveBoardData()))
+            | PlayerStatus.GameStarted(x,y)   -> PlayerMessageResponse.GameStarted(x, y)
             | PlayerStatus.PlayerMadeChoice(c,i,f) -> PlayerMessageResponse.PlayerMadeChoice(c,i,f)
             | PlayerStatus.BoardHasChanged(x) -> PlayerMessageResponse.BoardHasChanged(x)
             | _         -> failwith "Unrecognized message"

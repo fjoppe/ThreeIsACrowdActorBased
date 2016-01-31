@@ -6,12 +6,14 @@ open System.Runtime.Serialization
 open System.Reflection
 open Akka.Actor
 
+open WebSharper
 
+[<NamedUnionCases "type">]
 type PlayerMessage =
     | Choice of int
     | WhatIsMyId
 
-
+[<NamedUnionCases "type">]
 type PlayerMessageResponse =
     | YourId of Guid
     | YouAreRegisterd of IActorRef

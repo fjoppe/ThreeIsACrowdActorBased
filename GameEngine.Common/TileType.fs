@@ -1,5 +1,8 @@
 ﻿namespace GameEngine.Common
 
+open WebSharper
+
+[<NamedUnionCases>]
 type TileType = 
     | none = 0
     | board = 1

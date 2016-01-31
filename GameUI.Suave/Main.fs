@@ -25,6 +25,7 @@ module Templating =
             li ["About" => EndPoint.About]
         ]
 
+
     let Main ctx action title body =
         Content.Page(
             MainTemplate.Doc(
@@ -61,10 +62,12 @@ module Site =
     open Suave.Operators
     open Suave.Successful
     open System.IO
+    
     open Suave.Web
+    open Suave.WebSocket
 
     do 
-        let myHomeFolder = Path.Combine(System.Environment.CurrentDirectory) 
+        let myHomeFolder = Path.GetFullPath (Path.Combine(System.Environment.CurrentDirectory, "..", ".."))
         printf "%s" myHomeFolder 
 
         let cfg = {  defaultConfig with homeFolder = Some(myHomeFolder)}
@@ -72,6 +75,7 @@ module Site =
         let routing = 
             choose [
                 path "/App_Themes" >=> OK "test" ; Files.browseHome
+                path "/websocket" >=> handShake (GameEngineConnection.WebSocketServer)
                 (WebSharper.Suave.WebSharperAdapter.ToWebPart Main)
                 RequestErrors.NOT_FOUND "Page not found."
             ]

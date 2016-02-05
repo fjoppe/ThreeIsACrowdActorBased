@@ -9,6 +9,7 @@ open Suave.Utils
 open Suave.Sockets.Control
 open Suave.WebSocket
 
+[<AutoOpen>]
 module GameEngineConnection =
     let logger = LogManager.GetLogger("debug"); 
 

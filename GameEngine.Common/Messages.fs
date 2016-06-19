@@ -8,12 +8,12 @@ open Akka.Actor
 
 open WebSharper
 
-[<NamedUnionCases "type">]
+[<JavaScript; NamedUnionCases "type">]
 type PlayerMessage =
     | Choice of int
     | WhatIsMyId
 
-[<NamedUnionCases "type">]
+[<JavaScript; NamedUnionCases "type">]
 type PlayerMessageResponseWebSocket =
     | YourId of Guid
     | GameStarted of TileType * BoardSerializable
@@ -50,6 +50,7 @@ type PlayerMessageResponse =
             | Failed a           ->  PlayerMessageResponseWebSocket.Failed(a)
             | Nothing            ->  PlayerMessageResponseWebSocket.Nothing
             | YouAreRegisterd a  -> failwith "Cannot convert YouAreRegisterd "
+
 
 type RegisterPlayerMessage =
     | RegisterMe of IActorRef

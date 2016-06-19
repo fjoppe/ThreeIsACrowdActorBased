@@ -196,3 +196,9 @@ FakesAssemblies/
 *.opt
 /GameUI/Scripts/WebSharper
 /GameUI.Owin/Scripts/WebSharper
+/GameEngine.Service/licenses
+/GameEngine.Service/protos
+/GameEngine.Service/CHANGES.txt
+/GameUI.Owin/licenses
+/GameUI.Owin/protos
+/GameUI.Owin/CHANGES.txt

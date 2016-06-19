@@ -75,6 +75,12 @@
     </None>
     <None Include="App.config" />
     <Content Include="packages.config" />
+    <None Include="protos\tutorial\addressbook.proto" />
+    <None Include="protos\google\protobuf\descriptor.proto" />
+    <None Include="protos\google\protobuf\csharp_options.proto" />
+    <Content Include="licenses\protoc-license.txt" />
+    <Content Include="licenses\license.txt" />
+    <Content Include="CHANGES.txt" />
   </ItemGroup>
   <ItemGroup>
     <Reference Include="Akka">
@@ -106,11 +112,11 @@
       <Private>True</Private>
     </Reference>
     <Reference Include="Google.ProtocolBuffers">
-      <HintPath>..\packages\Google.ProtocolBuffers.2.4.1.555\lib\net40\Google.ProtocolBuffers.dll</HintPath>
+      <HintPath>..\packages\Google.ProtocolBuffers.2.4.1.521\lib\net40\Google.ProtocolBuffers.dll</HintPath>
       <Private>True</Private>
     </Reference>
     <Reference Include="Google.ProtocolBuffers.Serialization">
-      <HintPath>..\packages\Google.ProtocolBuffers.2.4.1.555\lib\net40\Google.ProtocolBuffers.Serialization.dll</HintPath>
+      <HintPath>..\packages\Google.ProtocolBuffers.2.4.1.521\lib\net40\Google.ProtocolBuffers.Serialization.dll</HintPath>
       <Private>True</Private>
     </Reference>
     <Reference Include="Helios">
@@ -122,7 +128,7 @@
       <Private>True</Private>
     </Reference>
     <Reference Include="Newtonsoft.Json">
-      <HintPath>..\packages\Newtonsoft.Json.8.0.3\lib\net45\Newtonsoft.Json.dll</HintPath>
+      <HintPath>..\packages\Newtonsoft.Json.7.0.1\lib\net45\Newtonsoft.Json.dll</HintPath>
       <Private>True</Private>
     </Reference>
     <Reference Include="NLog">

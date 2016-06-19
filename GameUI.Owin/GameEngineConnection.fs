@@ -7,34 +7,40 @@ open GameEngine.Common
 open WebSharper.Owin.WebSocket.Server
 
 module GameEngineConnection =
-    let configuration = Configuration.parse(File.ReadAllText(System.Web.HttpContext.Current.Server.MapPath("~/akka.config")))
+    
+    let currentDir = Directory.GetCurrentDirectory()
+    let configuration = Configuration.parse(File.ReadAllText(Path.Combine(currentDir, "..",  "akka.config")))
 
     let ActorSystem = System.create "GameStateClient" (configuration)
 
     let PlayerCommunicator (client : WebSocketClient<PlayerMessageResponseWebSocket, PlayerMessage>) =
-        let playerCommsActor (mailbox:Actor<obj>) =
-            let rec loop senderActor = actor {
-                    let! untypeMessage = mailbox.Receive()
-                    match untypeMessage with
-                    | :? PlayerMessage as message ->
-                        match senderActor with
-                        |   Some(dest) -> dest <! message
-                        |   None       -> mailbox.Stash()
-                    | :? PlayerMessageResponse as message ->
-                        match message with
-                        | YouAreRegisterd(ref) -> 
-                            printfn "I am registered"
-                            mailbox.UnstashAll()
-                            return! (loop (Some (ActorRefs.typed(ref))))
-                        | _ -> client.PostAsync (message.ToWebSocketType())
-                    | _ -> ()
+        try
+            let playerCommsActor (client : WebSocketClient<PlayerMessageResponseWebSocket, PlayerMessage>) (mailbox:Actor<obj>) =
+                let rec loop senderActor = actor {
+                        let! untypeMessage = mailbox.Receive()
+                        match untypeMessage with
+                        | :? PlayerMessage as message ->
+                            match senderActor with
+                            |   Some(dest) -> dest <! message
+                            |   None       -> mailbox.Stash()
+                        | :? PlayerMessageResponse as message ->
+                            match message with
+                            | YouAreRegisterd(ref) -> 
+                                printfn "I am registered"
+                                mailbox.UnstashAll()
+                                return! (loop (Some (ActorRefs.typed(ref))))
+                            | _ -> () //client.PostAsync (message.ToWebSocketType()) |> Async.Start
+                        | _ -> ()
 
-                    return! loop senderActor
-                }
-            loop None
+                        return! loop senderActor
+                    }
+                loop None
             
-        let actor = spawn ActorSystem "playerReceiver" playerCommsActor
-        ActorRefs.typed<PlayerMessage>(actor)
+            let actor = spawn ActorSystem "playerReceiver" (playerCommsActor client)
+            ActorRefs.typed<PlayerMessage>(actor)
+        with
+        | e -> printfn "%A" e
+               reraise()
 
 
     let Start route : StatefulAgent<PlayerMessageResponseWebSocket, PlayerMessage, int> =
@@ -46,11 +52,15 @@ module GameEngineConnection =
             registerPlayer <! GameEngine.Common.RegisterMe(ActorRefs.untyped(playerActor))
 
             0, fun state message -> async {
-                match message with
-                |   Message data -> playerActor <! data
-                |   Error   err  -> printf "Error"
-                |   Close        -> printf "Connection closed"
-                return state + 1
+                try
+                    match message with
+                    |   Message data -> playerActor <! data
+                    |   Error   err  -> printf "Error"
+                    |   Close        -> printf "Connection closed"
+                    return state + 1
+                with
+                |   e -> printf "%A" e
+                         return raise(e)
             }
 
 

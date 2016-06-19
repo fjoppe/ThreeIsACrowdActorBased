@@ -36,3 +36,6 @@ module Site =
             match endpoint with
             | EndPoint.Home -> HomePage ctx
         )
+
+    //[<Websocket>]
+

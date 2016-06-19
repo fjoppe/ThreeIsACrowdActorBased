@@ -2,16 +2,16 @@
     Calling remote actors
 *)
 
-#r @"..\packages\Akka.1.0.5\lib\net45\Akka.dll"
+#r @"..\packages\Akka.1.0.8\lib\net45\Akka.dll"
 #r @"..\packages\Akkling.0.2.1\lib\net45\Akkling.dll"
-#r @"..\packages\Akka.Remote.1.0.5\lib\net45\Akka.Remote.dll"
-#r @"..\packages\Helios.1.4.1\lib\net45\Helios.dll"
-#r @"..\packages\Google.ProtocolBuffers.2.4.1.521\lib\net40\Google.ProtocolBuffers.dll"
-#r @"..\packages\Google.ProtocolBuffers.2.4.1.521\lib\net40\Google.ProtocolBuffers.Serialization.dll"
+#r @"..\packages\Akka.Remote.1.0.8\lib\net45\Akka.Remote.dll"
+#r @"..\packages\Helios.2.1.1\lib\net45\Helios.dll"
+#r @"..\packages\Google.ProtocolBuffers.2.4.1.555\lib\net40\Google.ProtocolBuffers.dll"
+#r @"..\packages\Google.ProtocolBuffers.2.4.1.555\lib\net40\Google.ProtocolBuffers.Serialization.dll"
 #r @"..\GameEngine.Common\bin\Debug\GameEngine.Common.dll"
-#r @"..\packages\Newtonsoft.Json.7.0.1\lib\net45\Newtonsoft.Json.dll"
+#r @"..\packages\Newtonsoft.Json.8.0.3\lib\net45\Newtonsoft.Json.dll"
 #r @"..\packages\Wire.0.0.6\lib\Wire.dll"
-#I @"..\packages\FsPickler.1.7.1\lib\net45"
+#I @"..\packages\FsPickler.2.3.0\lib\net45"
 
 open Akka
 open Akkling

@@ -4,8 +4,12 @@
     <Configuration Condition="'$(Configuration)' == ''">Debug</Configuration>
     <Platform Condition="'$(Platform)' == ''">AnyCPU</Platform>
     <SchemaVersion>2.0</SchemaVersion>
-    <ProjectGuid>{804d3976-fa08-494b-a097-baad19558c16}</ProjectGuid>
+    <ProjectGuid>{fb5d6b38-4319-4967-894a-7d0baac66ae9}</ProjectGuid>
     <WebSharperProject>Site</WebSharperProject>
+    <WebSharperSourceMap>true</WebSharperSourceMap>
+    <OtherFlags>--quotations-debug</OtherFlags>
+    <WebProjectOutputDir>$(MSBuildThisFileDirectory)</WebProjectOutputDir>
+    <StartArguments>.. http://localhost:9000/</StartArguments>
     <TargetFSharpCoreVersion>4.3.1.0</TargetFSharpCoreVersion>
     <NuGetPackageImportStamp>
     </NuGetPackageImportStamp>
@@ -16,72 +20,92 @@
     <DebugType>full</DebugType>
     <Optimize>false</Optimize>
     <Tailcalls>false</Tailcalls>
-    <OutputPath>bin/Debug</OutputPath>
+    <OutputPath>bin</OutputPath>
     <DefineConstants>DEBUG;TRACE</DefineConstants>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|AnyCPU'">
     <DebugType>pdbonly</DebugType>
     <Optimize>true</Optimize>
     <Tailcalls>true</Tailcalls>
-    <OutputPath>bin/Release</OutputPath>
+    <OutputPath>bin</OutputPath>
     <DefineConstants>TRACE</DefineConstants>
   </PropertyGroup>
   <PropertyGroup>
     <OutputType>Exe</OutputType>
-    <Name>GameUI.Suave</Name>
-    <RootNamespace>GameUI.Suave</RootNamespace>
-    <AssemblyName>GameUI.Suave</AssemblyName>
+    <Name>GameUI.Owin</Name>
+    <RootNamespace>GameUI.Owin</RootNamespace>
+    <AssemblyName>GameUI.Owin</AssemblyName>
     <TargetFrameworkVersion>v4.5.2</TargetFrameworkVersion>
     <WarningLevel>3</WarningLevel>
   </PropertyGroup>
-  <ItemGroup>
-    <Compile Include="SocketEncoding.fs" />
-    <Compile Include="GameEngineConnection.fs" />
-    <Compile Include="VisualTest.fs" />
-    <Compile Include="Remoting.fs" />
-    <Compile Include="Client.fs" />
-    <Compile Include="Main.fs" />
-    <Content Include="Main.html" />
-    <Content Include="Setup.fsx" />
-    <Content Include="App.config" />
-    <Content Include="akka.config" />
-    <Content Include="packages.config" />
-    <None Include="App_Themes\Standard\BlueHexagon.png" />
-    <None Include="App_Themes\Standard\BlueHexagon.svg" />
-    <None Include="App_Themes\Standard\Fortress.png" />
-    <None Include="App_Themes\Standard\Fortress.svg" />
-    <None Include="App_Themes\Standard\Hexagon.png" />
-    <None Include="App_Themes\Standard\Hexagon.svg" />
-    <None Include="App_Themes\Standard\RedHexagon.png" />
-    <None Include="App_Themes\Standard\RedHexagon.svg" />
-    <None Include="App_Themes\Standard\YellowHexagon.png" />
-    <None Include="App_Themes\Standard\YellowHexagon.svg" />
-    <None Include="App_Themes\Standard\HexagonPossible.png" />
-    <None Include="App_Themes\Standard\HexagonPossible.svg" />
-    <None Include="TryOut.fsx" />
-    <None Include="PlayWithSuave.fsx" />
-  </ItemGroup>
   <Target Name="IncludeContent" BeforeTargets="Compile">
     <ItemGroup>
       <Content Include="Content/**/*.*" />
       <Content Include="Scripts/**/*.*" />
     </ItemGroup>
   </Target>
+  <!-- F# targets -->
+  <Choose>
+    <When Condition="'$(VisualStudioVersion)' == '11.0'">
+      <PropertyGroup Condition="Exists('$(MSBuildExtensionsPath32)\..\Microsoft SDKs\F#\3.0\Framework\v4.0\Microsoft.FSharp.Targets')">
+        <FSharpTargetsPath>$(MSBuildExtensionsPath32)\..\Microsoft SDKs\F#\3.0\Framework\v4.0\Microsoft.FSharp.Targets</FSharpTargetsPath>
+      </PropertyGroup>
+    </When>
+    <Otherwise>
+      <PropertyGroup Condition="Exists('$(MSBuildExtensionsPath32)\Microsoft\VisualStudio\v$(VisualStudioVersion)\FSharp\Microsoft.FSharp.Targets')">
+        <FSharpTargetsPath>$(MSBuildExtensionsPath32)\Microsoft\VisualStudio\v$(VisualStudioVersion)\FSharp\Microsoft.FSharp.Targets</FSharpTargetsPath>
+      </PropertyGroup>
+    </Otherwise>
+  </Choose>
+  <Import Project="$(FSharpTargetsPath)" />
+  <!-- Web targets -->
+  <PropertyGroup>
+    <VisualStudioVersion Condition="'$(VisualStudioVersion)' == ''">10.0</VisualStudioVersion>
+    <VSToolsPath Condition="'$(VSToolsPath)' == ''">$(MSBuildExtensionsPath32)\Microsoft\VisualStudio\v$(VisualStudioVersion)</VSToolsPath>
+  </PropertyGroup>
+  <Import Project="$(VSToolsPath)\WebApplications\Microsoft.WebApplication.targets" Condition="'$(VSToolsPath)' != ''" />
+  <Import Project="$(MSBuildExtensionsPath32)\Microsoft\VisualStudio\v10.0\WebApplications\Microsoft.WebApplication.targets" Condition="false" />
+  <Import Project="..\packages\WebSharper.3.6.14.237\build\WebSharper.targets" Condition="Exists('..\packages\WebSharper.3.6.14.237\build\WebSharper.targets')" />
+  <Target Name="EnsureNuGetPackageBuildImports" BeforeTargets="PrepareForBuild">
+    <PropertyGroup>
+      <ErrorText>This project references NuGet package(s) that are missing on this computer. Use NuGet Package Restore to download them.  For more information, see http://go.microsoft.com/fwlink/?LinkID=322105. The missing file is {0}.</ErrorText>
+    </PropertyGroup>
+    <Error Condition="!Exists('..\packages\WebSharper.3.6.14.237\build\WebSharper.targets')" Text="$([System.String]::Format('$(ErrorText)', '..\packages\WebSharper.3.6.14.237\build\WebSharper.targets'))" />
+  </Target>
   <ItemGroup>
+    <Compile Include="GameEngineConnection.fs" />
+    <Compile Include="Remoting.fs" />
+    <Compile Include="Client.fs" />
+    <Compile Include="VisualTest.fs" />
+    <Compile Include="Main.fs" />
+    <Content Include="Main.html" />
+    <Content Include="App.config" />
+    <Content Include="akka.config" />
+    <Content Include="packages.config" />
+    <None Include="Setup.fsx" />
+    <None Include="App_Themes\Standard\BlueHexagon.png" />
+    <None Include="App_Themes\Standard\Fortress.png" />
+    <None Include="App_Themes\Standard\Hexagon.png" />
+    <None Include="App_Themes\Standard\RedHexagon.png" />
+    <None Include="App_Themes\Standard\YellowHexagon.png" />
+    <None Include="TryOut.fsx" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\WebSharper.Jatek\WebSharper.Jatek.fsproj">
+      <Name>WebSharper.Jatek</Name>
+      <Project>{e5e64c8f-caec-4162-8c36-ab13bd7c03e1}</Project>
+      <Private>True</Private>
+    </ProjectReference>
     <Reference Include="Akka">
-      <HintPath>..\packages\Akka.1.0.8\lib\net45\Akka.dll</HintPath>
+      <HintPath>..\packages\Akka.1.0.5\lib\net45\Akka.dll</HintPath>
       <Private>True</Private>
     </Reference>
     <Reference Include="Akka.Remote">
-      <HintPath>..\packages\Akka.Remote.1.0.8\lib\net45\Akka.Remote.dll</HintPath>
+      <HintPath>..\packages\Akka.Remote.1.0.5\lib\net45\Akka.Remote.dll</HintPath>
       <Private>True</Private>
     </Reference>
     <Reference Include="Akkling">
       <HintPath>..\packages\Akkling.0.2.1\lib\net45\Akkling.dll</HintPath>
-      <Private>True</Private>
-    </Reference>
-    <Reference Include="FSharp.Core">
-      <HintPath>..\packages\FSharp.Core.4.0.0.1\lib\net40\FSharp.Core.dll</HintPath>
       <Private>True</Private>
     </Reference>
     <Reference Include="FSharp.PowerPack">
@@ -105,15 +129,39 @@
       <Private>True</Private>
     </Reference>
     <Reference Include="Helios">
-      <HintPath>..\packages\Helios.2.1.1\lib\net45\Helios.dll</HintPath>
+      <HintPath>..\packages\Helios.1.4.1\lib\net45\Helios.dll</HintPath>
       <Private>True</Private>
     </Reference>
     <Reference Include="HttpMultipartParser">
       <HintPath>..\packages\WebSharper.Owin.3.6.11.126\lib\net45\HttpMultipartParser.dll</HintPath>
       <Private>True</Private>
     </Reference>
+    <Reference Include="IntelliFactory.Xml">
+      <HintPath>..\packages\IntelliFactory.Xml.0.6.63.95\lib\net40\IntelliFactory.Xml.dll</HintPath>
+      <Private>True</Private>
+    </Reference>
     <Reference Include="Microsoft.Owin">
       <HintPath>..\packages\Microsoft.Owin.3.0.1\lib\net45\Microsoft.Owin.dll</HintPath>
+      <Private>True</Private>
+    </Reference>
+    <Reference Include="Microsoft.Owin.Diagnostics">
+      <HintPath>..\packages\Microsoft.Owin.Diagnostics.3.0.1\lib\net45\Microsoft.Owin.Diagnostics.dll</HintPath>
+      <Private>True</Private>
+    </Reference>
+    <Reference Include="Microsoft.Owin.FileSystems">
+      <HintPath>..\packages\Microsoft.Owin.FileSystems.3.0.1\lib\net45\Microsoft.Owin.FileSystems.dll</HintPath>
+      <Private>True</Private>
+    </Reference>
+    <Reference Include="Microsoft.Owin.Host.HttpListener">
+      <HintPath>..\packages\Microsoft.Owin.Host.HttpListener.3.0.1\lib\net45\Microsoft.Owin.Host.HttpListener.dll</HintPath>
+      <Private>True</Private>
+    </Reference>
+    <Reference Include="Microsoft.Owin.Hosting">
+      <HintPath>..\packages\Microsoft.Owin.Hosting.3.0.1\lib\net45\Microsoft.Owin.Hosting.dll</HintPath>
+      <Private>True</Private>
+    </Reference>
+    <Reference Include="Microsoft.Owin.StaticFiles">
+      <HintPath>..\packages\Microsoft.Owin.StaticFiles.3.0.1\lib\net45\Microsoft.Owin.StaticFiles.dll</HintPath>
       <Private>True</Private>
     </Reference>
     <Reference Include="Microsoft.Practices.ServiceLocation">
@@ -137,6 +185,9 @@
       <Private>True</Private>
     </Reference>
     <Reference Include="mscorlib" />
+    <Reference Include="FSharp.Core, Version=$(TargetFSharpCoreVersion), Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a">
+      <Private>True</Private>
+    </Reference>
     <Reference Include="Newtonsoft.Json">
       <HintPath>..\packages\Newtonsoft.Json.8.0.3\lib\net45\Newtonsoft.Json.dll</HintPath>
       <Private>True</Private>
@@ -150,11 +201,7 @@
       <Private>True</Private>
     </Reference>
     <Reference Include="Owin.WebSocket">
-      <HintPath>..\packages\WebSharper.Owin.WebSocket.3.6.6.45\lib\net45\Owin.WebSocket.dll</HintPath>
-      <Private>True</Private>
-    </Reference>
-    <Reference Include="Suave">
-      <HintPath>..\packages\Suave.1.1.2\lib\net40\Suave.dll</HintPath>
+      <HintPath>..\packages\WebSharper.Owin.WebSocket.3.6.12.52\lib\net45\Owin.WebSocket.dll</HintPath>
       <Private>True</Private>
     </Reference>
     <Reference Include="System" />
@@ -186,6 +233,14 @@
       <HintPath>..\packages\WebSharper.3.6.14.237\lib\net40\WebSharper.Core.JavaScript.dll</HintPath>
       <Private>True</Private>
     </Reference>
+    <Reference Include="WebSharper.Html.Client">
+      <HintPath>..\packages\WebSharper.Html.3.6.10.22\lib\net40\WebSharper.Html.Client.dll</HintPath>
+      <Private>True</Private>
+    </Reference>
+    <Reference Include="WebSharper.Html.Server">
+      <HintPath>..\packages\WebSharper.Html.3.6.10.22\lib\net40\WebSharper.Html.Server.dll</HintPath>
+      <Private>True</Private>
+    </Reference>
     <Reference Include="WebSharper.InterfaceGenerator">
       <HintPath>..\packages\WebSharper.3.6.14.237\lib\net40\WebSharper.InterfaceGenerator.dll</HintPath>
       <Private>True</Private>
@@ -207,15 +262,11 @@
       <Private>True</Private>
     </Reference>
     <Reference Include="WebSharper.Owin.WebSocket">
-      <HintPath>..\packages\WebSharper.Owin.WebSocket.3.6.6.45\lib\net45\WebSharper.Owin.WebSocket.dll</HintPath>
+      <HintPath>..\packages\WebSharper.Owin.WebSocket.3.6.12.52\lib\net45\WebSharper.Owin.WebSocket.dll</HintPath>
       <Private>True</Private>
     </Reference>
     <Reference Include="WebSharper.Sitelets">
       <HintPath>..\packages\WebSharper.3.6.14.237\lib\net40\WebSharper.Sitelets.dll</HintPath>
-      <Private>True</Private>
-    </Reference>
-    <Reference Include="WebSharper.Suave">
-      <HintPath>..\packages\WebSharper.Suave.3.6.11.38\lib\net45\WebSharper.Suave.dll</HintPath>
       <Private>True</Private>
     </Reference>
     <Reference Include="WebSharper.UI.Next">
@@ -234,45 +285,10 @@
       <HintPath>..\packages\Wire.0.0.6\lib\Wire.dll</HintPath>
       <Private>True</Private>
     </Reference>
-  </ItemGroup>
-  <ItemGroup>
     <ProjectReference Include="..\GameEngine.Common\GameEngine.Common.fsproj">
       <Name>GameEngine.Common</Name>
       <Project>{a4534e5e-79d5-49f5-ad5b-5a3c1b7153b3}</Project>
       <Private>True</Private>
     </ProjectReference>
-    <ProjectReference Include="..\WebSharper.Jatek\WebSharper.Jatek.fsproj">
-      <Name>WebSharper.Jatek</Name>
-      <Project>{e5e64c8f-caec-4162-8c36-ab13bd7c03e1}</Project>
-      <Private>True</Private>
-    </ProjectReference>
   </ItemGroup>
-  <!-- F# targets -->
-  <Choose>
-    <When Condition="'$(VisualStudioVersion)' == '11.0'">
-      <PropertyGroup Condition="Exists('$(MSBuildExtensionsPath32)\..\Microsoft SDKs\F#\3.0\Framework\v4.0\Microsoft.FSharp.Targets')">
-        <FSharpTargetsPath>$(MSBuildExtensionsPath32)\..\Microsoft SDKs\F#\3.0\Framework\v4.0\Microsoft.FSharp.Targets</FSharpTargetsPath>
-      </PropertyGroup>
-    </When>
-    <Otherwise>
-      <PropertyGroup Condition="Exists('$(MSBuildExtensionsPath32)\Microsoft\VisualStudio\v$(VisualStudioVersion)\FSharp\Microsoft.FSharp.Targets')">
-        <FSharpTargetsPath>$(MSBuildExtensionsPath32)\Microsoft\VisualStudio\v$(VisualStudioVersion)\FSharp\Microsoft.FSharp.Targets</FSharpTargetsPath>
-      </PropertyGroup>
-    </Otherwise>
-  </Choose>
-  <Import Project="$(FSharpTargetsPath)" />
-  <!-- Web targets -->
-  <PropertyGroup>
-    <VisualStudioVersion Condition="'$(VisualStudioVersion)' == ''">10.0</VisualStudioVersion>
-    <VSToolsPath Condition="'$(VSToolsPath)' == ''">$(MSBuildExtensionsPath32)\Microsoft\VisualStudio\v$(VisualStudioVersion)</VSToolsPath>
-  </PropertyGroup>
-  <Import Project="$(VSToolsPath)\WebApplications\Microsoft.WebApplication.targets" Condition="'$(VSToolsPath)' != ''" />
-  <Import Project="$(MSBuildExtensionsPath32)\Microsoft\VisualStudio\v10.0\WebApplications\Microsoft.WebApplication.targets" Condition="false" />
-  <Import Project="..\packages\WebSharper.3.6.14.237\build\WebSharper.targets" Condition="Exists('..\packages\WebSharper.3.6.14.237\build\WebSharper.targets')" />
-  <Target Name="EnsureNuGetPackageBuildImports" BeforeTargets="PrepareForBuild">
-    <PropertyGroup>
-      <ErrorText>This project references NuGet package(s) that are missing on this computer. Use NuGet Package Restore to download them.  For more information, see http://go.microsoft.com/fwlink/?LinkID=322105. The missing file is {0}.</ErrorText>
-    </PropertyGroup>
-    <Error Condition="!Exists('..\packages\WebSharper.3.6.14.237\build\WebSharper.targets')" Text="$([System.String]::Format('$(ErrorText)', '..\packages\WebSharper.3.6.14.237\build\WebSharper.targets'))" />
-  </Target>
 </Project>

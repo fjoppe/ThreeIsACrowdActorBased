@@ -19,7 +19,7 @@ type Visual(sourceUrl:string, x:int, y:int, width:int, height:int) =
     override this.Visual
         with get() =
             let styleView = 
-                View.Const(fun w h x y -> sprintf "position: absolute; width: %dpx; height: %dpx; background-color: lightgray; left: %dpx; top: %dpx" w h x y) 
+                View.Const(fun w h x y -> sprintf "position: absolute; width: %dpx; height: %dpx; background-color: transparent; left: %dpx; top: %dpx" w h x y) 
                 <*> this.Width.View
                 <*> this.Height.View 
                 <*> this.X.View 

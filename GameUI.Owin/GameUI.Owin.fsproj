@@ -82,19 +82,29 @@
     <Content Include="App.config" />
     <Content Include="akka.config" />
     <Content Include="packages.config" />
-    <None Include="Setup.fsx" />
+    <Content Include="App_Themes\Standard\BlueHexagon.svg" />
+    <Content Include="App_Themes\Standard\Fortress.svg" />
+    <Content Include="App_Themes\Standard\Hexagon.svg" />
+    <Content Include="App_Themes\Standard\RedHexagon.svg" />
+    <Content Include="App_Themes\Standard\YellowHexagon.svg" />
+    <None Include="App_Themes\Standard\HexagonPotentialChoice.svg" />
+    <Content Include="Setup.fsx" />
+    <!--
     <None Include="App_Themes\Standard\BlueHexagon.png" />
     <None Include="App_Themes\Standard\Fortress.png" />
     <None Include="App_Themes\Standard\Hexagon.png" />
     <None Include="App_Themes\Standard\RedHexagon.png" />
     <None Include="App_Themes\Standard\YellowHexagon.png" />
+    -->
     <None Include="TryOut.fsx" />
+    <!--
     <None Include="protos\tutorial\addressbook.proto" />
     <None Include="protos\google\protobuf\descriptor.proto" />
-    <None Include="protos\google\protobuf\csharp_options.proto" />
+    <None Include="protos\google\protobuf\csharp_options.proto" />   
     <Content Include="licenses\protoc-license.txt" />
     <Content Include="licenses\license.txt" />
     <Content Include="CHANGES.txt" />
+    -->
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\WebSharper.Jatek\WebSharper.Jatek.fsproj">

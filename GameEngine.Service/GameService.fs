@@ -7,7 +7,7 @@ open System
 
 open Topshelf
 open Time
-open NLog;
+open NLog
 open GameEngine.Service
 
 

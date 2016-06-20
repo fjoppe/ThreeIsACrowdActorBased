@@ -22,6 +22,7 @@ module Client =
             0, fun state msg -> async {
                 match msg with
                 | Message data ->
+                    Console.Log "WebSocket Message."
                     match data with
                     | PlayerMessageResponseWebSocket.YourId(id)                ->  Var.Set rvInput (id.ToString())
                     | PlayerMessageResponseWebSocket.GameStarted(color, board) -> ()
@@ -63,22 +64,22 @@ module Client =
     let Main (endpoint : Endpoint<PlayerMessageResponseWebSocket, PlayerMessage>) = 
         async {
             let! server = ConnectStateful endpoint wsServer
-            do! Async.Sleep 5000
+            //do! Async.Sleep 5000
             server.Post (PlayerMessage.WhatIsMyId)
-            do! Async.Sleep 5000
+            do! Async.Sleep 10000
         } |> Async.Start
 
 
-        let submit = Submitter.CreateOption rvInput.View
-        let vReversed =
-            submit.View.MapAsync(function
-                | None -> async { return "" }
-                | Some input -> Server.DoSomething input
-            )
+//        let submit = Submitter.CreateOption rvInput.View
+//        let vReversed =
+//            submit.View.MapAsync(function
+//                | None -> async { return "" }
+//                | Some input -> Server.DoSomething input
+//            )
         div [
             Doc.Input [] rvInput
-            Doc.Button "Send" [] submit.Trigger
+//            Doc.Button "Send" [] submit.Trigger
             hr []
             h4Attr [attr.``class`` "text-muted"] [text "The server responded:"]
-            divAttr [attr.``class`` "jumbotron"] [h1 [textView vReversed]]
+//            divAttr [attr.``class`` "jumbotron"] [h1 [textView vReversed]]
         ]

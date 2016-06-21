@@ -63,6 +63,12 @@ module Client =
                     return state
             }
 
+    let Bevel = 
+        let visual = Visual.Create "App_Themes/Standard/HexagonMouseOver.svg" 0 0 60 52
+        visual.Visible <- false;
+        visual 
+
+
     let BoardVisual =
         View.Const(
             fun tileList possibleMoves-> 
@@ -84,7 +90,12 @@ module Client =
                                     | _               -> ""
                                 else
                                     "HexagonPotentialChoice.svg"
-                            Visual.Create (sprintf "App_Themes/Standard/%s" color) (xOffset + tile.X) (yOffset + tile.Y) 60 52 :> Artefact
+                            let visual = Visual.Create (sprintf "App_Themes/Standard/%s" color) (xOffset + tile.X) (yOffset + tile.Y) 60 52 
+                            visual
+                            |>  Visual.MouseEnter (fun el ev -> Bevel.Visible <- true)
+                            |>  Visual.MouseLeave (fun el ev -> Bevel.Visible <- false)
+                            |>  Visual.MouseOver  (fun el ev -> Bevel.Left <- visual.Left; Bevel.Top <- visual.Top)
+                            :> Artefact
                     )
                 allVisuals
         )
@@ -111,7 +122,7 @@ module Client =
             do! Async.Sleep 10000
         } |> Async.Start
 
-        let allVisuals = View.Map2(fun a b -> b |> List.append a) BoardVisual FortressVisual
+        let allVisuals = View.Map2(fun a b -> [Bevel:> Artefact] |> List.append b |> List.append a) BoardVisual FortressVisual
 
         let scene = allVisuals |> View.Map(fun av -> Scene.Create(av)) 
         let allScenes = scene |> View.Map(fun s -> [(1, s)] |> Map.ofList)

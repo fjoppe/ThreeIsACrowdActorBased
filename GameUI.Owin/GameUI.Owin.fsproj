@@ -88,6 +88,7 @@
     <Content Include="App_Themes\Standard\RedHexagon.svg" />
     <Content Include="App_Themes\Standard\YellowHexagon.svg" />
     <None Include="App_Themes\Standard\HexagonPotentialChoice.svg" />
+    <None Include="App_Themes\Standard\HexagonMouseOver.svg" />
     <Content Include="Setup.fsx" />
     <!--
     <None Include="App_Themes\Standard\BlueHexagon.png" />

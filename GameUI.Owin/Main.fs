@@ -47,6 +47,7 @@ module Site =
 
     let HomePage ep ctx =
         Templating.Main ctx EndPoint.Home "Home" [
+            H1 [Text "Three is a crowd - actor based"]
             Div [ClientSide <@ Client.Main ep @>]
         ]
 

@@ -17,7 +17,24 @@ open GameEngine.Common
 module Client =
     let playerId = Var.Create ""
     let playerColor = Var.Create ""
+
+    type SendToServerMessage =
+    |   SetServer of WebSocketServer<PlayerMessageResponseWebSocket, PlayerMessage>
+    |   SendMessageToServer of PlayerMessage
     
+    let SendToServer = MailboxProcessor<SendToServerMessage>.Start(fun inbox ->
+        let rec loop server = async {
+                let! msg = inbox.Receive()
+                match msg with
+                | SetServer(ws) -> Console.Log "Server Set"; return! loop(Some ws)
+                | SendMessageToServer(pm) ->
+                    match server with                    
+                    |   None    ->  Console.Log "No server.. ignored"
+                    |   Some(s) ->  s.Post pm; Console.Log "Send to server"
+                return! (loop server)
+            }
+        loop None
+        )
 
     [<Literal>]
     let xOffset = 230
@@ -27,6 +44,18 @@ module Client =
     let tileBoard = Var.Create List.empty<HexagonTileSerializable>
     let possibleMovesBoard = Var.Create List.empty<int>
 
+    let GameMessage = Var.Create ""
+
+    let ItsYourTurn = Var.Create false;
+
+    let ColorToString color =
+        match color with
+        | TileType.blue   -> "Blue"
+        | TileType.red    -> "Red"
+        | TileType.yellow -> "Yellow"
+        | _               -> "Unknown"
+
+
     let wsServer = 
         fun server ->
             0, fun state msg -> async {
@@ -34,22 +63,33 @@ module Client =
                 | Message data ->
                     Console.Log "WebSocket Message."
                     match data with
-                    | PlayerMessageResponseWebSocket.YourId(id)                ->  Var.Set playerId (id.ToString())
+                    | PlayerMessageResponseWebSocket.YourId(id)                ->  
+                        Var.Set playerId (id.ToString())
+                        GameMessage.Value <- "Registered, waiting for game to start"
                     | PlayerMessageResponseWebSocket.GameStarted(color, board) ->
-                        let colorString =
-                             match color with
-                            | TileType.blue   -> "Blue"
-                            | TileType.red    -> "Red"
-                            | TileType.yellow -> "Yellow"
-                            | _               -> "Unknown"
-                        Var.Set playerColor (sprintf "%s" colorString)
+                        Var.Set playerColor (sprintf "%s" (ColorToString color))
                         Var.Set tileBoard (board.ActiveTileList |> List.ofArray)
-                    | PlayerMessageResponseWebSocket.BoardHasChanged(colorList) -> ()
-                    | PlayerMessageResponseWebSocket.ItIsYourTurn(possibleMoves) -> Var.Set possibleMovesBoard possibleMoves
-                    | PlayerMessageResponseWebSocket.PlayerMadeChoice(color, tileId, withFortress) -> ()
-                    | PlayerMessageResponseWebSocket.NoMoves                   -> ()
-                    | PlayerMessageResponseWebSocket.GameOver                  -> ()
-                    | PlayerMessageResponseWebSocket.Failed(message)           -> ()
+                        GameMessage.Value <- "Game Started.. initializing board"
+                    | PlayerMessageResponseWebSocket.BoardHasChanged(colorList) ->
+                        let newTileList =
+                            colorList |> List.fold(
+                                fun st changeElement ->
+                                    st |> List.map(
+                                        fun tile ->
+                                            if tile.Id = changeElement.Id then {tile with TileType = changeElement.TileType; Fortress = changeElement.Fortress}
+                                            else tile
+                                        )
+                                ) tileBoard.Value
+                        tileBoard.Value <- newTileList
+                    | PlayerMessageResponseWebSocket.ItIsYourTurn(possibleMoves) -> 
+                        Var.Set possibleMovesBoard possibleMoves
+                        ItsYourTurn.Value <- true
+                        GameMessage.Value <- "It is your turn"
+                    | PlayerMessageResponseWebSocket.PlayerMadeChoice(color, tileId, withFortress) -> 
+                        GameMessage.Value <- (sprintf "Player %s made a choice." (ColorToString color))
+                    | PlayerMessageResponseWebSocket.NoMoves                   -> GameMessage.Value <- "No moves"
+                    | PlayerMessageResponseWebSocket.GameOver                  -> GameMessage.Value <- "Game Over"
+                    | PlayerMessageResponseWebSocket.Failed(message)           -> GameMessage.Value <- (sprintf "Failure: %s" message)
                     | PlayerMessageResponseWebSocket.Nothing                   -> ()
                     return (state + 1)
                 | Close ->
@@ -63,11 +103,6 @@ module Client =
                     return state
             }
 
-    let Bevel = 
-        let visual = Visual.Create "App_Themes/Standard/HexagonMouseOver.svg" 0 0 60 52
-        visual.Visible <- false;
-        visual 
-
 
     let BoardVisual =
         View.Const(
@@ -80,22 +115,31 @@ module Client =
                                 possibleMoves  
                                 |> List.tryFind(fun e -> e = tile.Id)
 
-                            let color =
+                            let color, clickable =
                                 if possibleMoveMarked.IsNone then
-                                    match tile.TileType with
-                                    | TileType.blue   -> "BlueHexagon.svg"
-                                    | TileType.red    -> "RedHexagon.svg"
-                                    | TileType.yellow -> "YellowHexagon.svg"
-                                    | TileType.board  -> "Hexagon.svg"
-                                    | _               -> ""
+                                    let svg = 
+                                        match tile.TileType with
+                                        | TileType.blue   -> "BlueHexagon.svg"
+                                        | TileType.red    -> "RedHexagon.svg"
+                                        | TileType.yellow -> "YellowHexagon.svg"
+                                        | TileType.board  -> "Hexagon.svg"
+                                        | _               -> ""
+                                    (svg, false)
                                 else
-                                    "HexagonPotentialChoice.svg"
-                            let visual = Visual.Create (sprintf "App_Themes/Standard/%s" color) (xOffset + tile.X) (yOffset + tile.Y) 60 52 
-                            visual
-                            |>  Visual.MouseEnter (fun el ev -> Bevel.Visible <- true)
-                            |>  Visual.MouseLeave (fun el ev -> Bevel.Visible <- false)
-                            |>  Visual.MouseOver  (fun el ev -> Bevel.Left <- visual.Left; Bevel.Top <- visual.Top)
-                            :> Artefact
+                                    ("HexagonPotentialChoice.svg", true)
+                            let visual = Visual.Create (sprintf "App_Themes/Standard/%s" color) (xOffset + tile.X) (yOffset + tile.Y) 60 52
+                           
+                            let visual = 
+                                if clickable then 
+                                    visual 
+                                    |> Visual.Click (
+                                        fun el ev -> 
+                                            possibleMovesBoard.Value <- List.empty<int>
+                                            SendToServer.Post (SendMessageToServer(Choice(tile.Id)))
+                                            )
+                                else visual
+
+                            visual :> Artefact
                     )
                 allVisuals
         )
@@ -118,11 +162,11 @@ module Client =
     let Main (endpoint : Endpoint<PlayerMessageResponseWebSocket, PlayerMessage>) = 
         async {
             let! server = ConnectStateful endpoint wsServer
+            SendToServer.Post (SetServer(server))
             server.Post (PlayerMessage.WhatIsMyId)
-            do! Async.Sleep 10000
         } |> Async.Start
 
-        let allVisuals = View.Map2(fun a b -> [Bevel:> Artefact] |> List.append b |> List.append a) BoardVisual FortressVisual
+        let allVisuals = View.Map2(fun a b -> (* [Bevel:> Artefact] |> List.append *) b |> List.append a) BoardVisual FortressVisual
 
         let scene = allVisuals |> View.Map(fun av -> Scene.Create(av)) 
         let allScenes = scene |> View.Map(fun s -> [(1, s)] |> Map.ofList)
@@ -137,4 +181,5 @@ module Client =
             ]
             hr []
             Doc.EmbedView game
+            Doc.TextView GameMessage.View
         ]

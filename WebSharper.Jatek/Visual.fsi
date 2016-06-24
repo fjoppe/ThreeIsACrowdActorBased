@@ -27,6 +27,7 @@ module Visual =
     val MouseEnter : MouseEvent -> Visual -> Visual
     val MouseLeave : MouseEvent -> Visual -> Visual
     val MouseOver  : MouseEvent -> Visual -> Visual
+    val Click      : MouseEvent -> Visual -> Visual
 
 
 

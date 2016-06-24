@@ -35,7 +35,7 @@
     <Name>GameUI.Owin</Name>
     <RootNamespace>GameUI.Owin</RootNamespace>
     <AssemblyName>GameUI.Owin</AssemblyName>
-    <TargetFrameworkVersion>v4.5.2</TargetFrameworkVersion>
+    <TargetFrameworkVersion>v4.6.1</TargetFrameworkVersion>
     <WarningLevel>3</WarningLevel>
   </PropertyGroup>
   <Target Name="IncludeContent" BeforeTargets="Compile">

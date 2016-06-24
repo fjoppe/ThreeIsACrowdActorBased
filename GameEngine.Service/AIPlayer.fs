@@ -26,6 +26,9 @@ module AIPlayer =
         member this.SetPlayer p = { this with Player = p }
         static member Create() = { GameState = None; Player = Guid.NewGuid(); Connection = None}
 
+    let Wait() =
+        let rnd = Random(31)
+        int(4.0 + (rnd.NextDouble() * 3.0))
 
     /// Sends a message to the waiting room after a waiting period, and awaits the waiting room's response.
     /// If this response says that this actor is part of the game, the AI will play, otherwise it terminates.
@@ -79,6 +82,7 @@ module AIPlayer =
                     | None -> mailbox.Stash()
                 | PlayerMessageResponse.ItIsYourTurn(possibleMoves) -> 
                     logger (sprintf "It is your turn, possible: %A" possibleMoves)
+                    Async.Sleep (Wait() * 1000) |> Async.RunSynchronously
                     match state.GameState with
                     | Some (gameState) ->
                         let ai = AI.Create gameId

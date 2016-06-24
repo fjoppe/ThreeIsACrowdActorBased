@@ -15,56 +15,58 @@ type MouseEvent = (Dom.Element -> Dom.MouseEvent -> unit)
 type MouseEvents = {
         MouseEnter  : MouseEvent 
         MouseLeave  : MouseEvent 
-        MouseOver   : MouseEvent 
+        MouseOver   : MouseEvent
+        Click       : MouseEvent
     }
     with
         static member Empty =
             let emptyFun = fun (el:Dom.Element) (ev:Dom.MouseEvent) -> ()
-            { MouseEnter = emptyFun; MouseLeave = emptyFun; MouseOver = emptyFun}
+            { MouseEnter = emptyFun; MouseLeave = emptyFun; MouseOver = emptyFun; Click = emptyFun}
 
 [<JavaScript; Sealed>]
-type Visual(sourceUrl:string, x:int, y:int, width:int, height:int, events: MouseEvents) = 
+type Visual(sourceUrl:string, x:int, y:int, width:int, height:int) = 
     inherit Artefact() 
-    member internal this.SourceUrl = sourceUrl
-    member internal this.X = Var.Create x
-    member internal this.Y = Var.Create y
-    member internal this.Width = Var.Create width
-    member internal this.Height = Var.Create height
-    member internal this.Events = events
-    member private this.Hidden = Var.Create false
+    let SourceUrl = sourceUrl
+    let X = Var.Create x
+    let Y = Var.Create y
+    let Width = Var.Create width
+    let Height = Var.Create height
+    let events = Var.Create MouseEvents.Empty
+    let Hidden = Var.Create false
 
     member this.Left
-        with get() = this.X.Value
-        and  set v = Var.Set this.X v
+        with get() = X.Value
+        and  set v = Var.Set X v
 
     member this.Top
-        with get() = this.Y.Value
-        and  set v = Var.Set this.Y v
+        with get() = Y.Value
+        and  set v = Var.Set Y v
 
     member this.Visible 
-        with get() = not(this.Hidden.Value)
-        and  set show = Var.Set (this.Hidden) (not(show))
+        with get() = not(Hidden.Value)
+        and  set show = Var.Set (Hidden) (not(show))
 
-    internal new (sourceUrl:string, x:int, y:int, width:int, height:int) = Visual(sourceUrl,x,y,width,height,MouseEvents.Empty)
+    member this.Events = events
 
-    member internal this.SetMouseEvents events = Visual(sourceUrl,x,y,width,height,events)
+    member internal this.SetMouseEvents e = Var.Set events e
 
     override this.Visual
         with get() =
             let styleView = 
                 View.Const(fun w h x y -> sprintf "position: absolute; width: %dpx; height: %dpx; background-color: transparent; left: %dpx; top: %dpx" w h x y) 
-                <*> this.Width.View
-                <*> this.Height.View 
-                <*> this.X.View 
-                <*> this.Y.View
+                <*> Width.View
+                <*> Height.View 
+                <*> X.View 
+                <*> Y.View
 
             divAttr [attr.styleDyn styleView][
                 imgAttr [
-                    attr.src this.SourceUrl
-                    attr.styleDyn (View.Map(fun b -> if b then "display: none" else "display: inherit") this.Hidden.View)
-                    on.mouseEnter (events.MouseEnter)
-                    on.mouseLeave (events.MouseLeave)
-                    on.mouseMove  (events.MouseOver)
+                    attr.src SourceUrl
+                    attr.styleDyn (View.Map(fun b -> sprintf "pointer-events:visible; %s" (if b then "display: none" else "display: inherit")) Hidden.View)
+                    on.mouseLeave (events.Value.MouseEnter)
+                    on.mouseEnter (events.Value.MouseLeave)
+                    on.mouseOver  (events.Value.MouseOver)
+                    on.click      (events.Value.Click)
                     ][]
                 ] :> Doc
 
@@ -73,7 +75,8 @@ type Visual(sourceUrl:string, x:int, y:int, width:int, height:int, events: Mouse
 module Visual =
     let Create source x y w h = Visual(source, x, y, w, h)
 
-    let MouseEnter (func: MouseEvent) (visual:Visual) = visual.SetMouseEvents ({visual.Events with MouseEnter = func})
-    let MouseLeave (func: MouseEvent) (visual:Visual) = visual.SetMouseEvents ({visual.Events with MouseLeave = func})
-    let MouseOver  (func: MouseEvent) (visual:Visual) = visual.SetMouseEvents ({visual.Events with MouseOver = func})
+    let MouseEnter (func: MouseEvent) (visual:Visual) = visual.SetMouseEvents ({visual.Events.Value with MouseEnter = func}); visual
+    let MouseLeave (func: MouseEvent) (visual:Visual) = visual.SetMouseEvents ({visual.Events.Value with MouseLeave = func}); visual
+    let MouseOver  (func: MouseEvent) (visual:Visual) = visual.SetMouseEvents ({visual.Events.Value with MouseOver = func}); visual
+    let Click      (func: MouseEvent) (visual:Visual) = visual.SetMouseEvents ({visual.Events.Value with Click = func}); visual
 

@@ -31,7 +31,7 @@
     <Name>WebSharper.Jatek</Name>
     <RootNamespace>WebSharper.Jatek</RootNamespace>
     <AssemblyName>WebSharper.Jatek</AssemblyName>
-    <TargetFrameworkVersion>v4.5.2</TargetFrameworkVersion>
+    <TargetFrameworkVersion>v4.6.1</TargetFrameworkVersion>
     <WarningLevel>3</WarningLevel>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
